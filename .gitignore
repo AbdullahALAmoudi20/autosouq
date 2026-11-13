@@ -1,0 +1,15 @@
+# Working notes and the copy prepared for the live host
+drafts/
+Hosting/
+*.zip
+
+# Word lock files
+~$*
+
+# NHTSA answers cached at run time (the folder itself stays, with its .htaccess)
+app/cache/*
+!app/cache/.htaccess
+
+# Photos uploaded through the manager pages
+app/images/uploads/*
+!app/images/uploads/README.txt

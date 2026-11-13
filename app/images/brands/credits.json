@@ -1,0 +1,32 @@
+{
+ "toyota.png": {
+  "file": "Toyota carlogo.svg",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Toyota_carlogo.svg"
+ },
+ "ford.png": {
+  "file": "Ford logo flat.svg",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Ford_logo_flat.svg"
+ },
+ "chevrolet.png": {
+  "file": "Chevrolet-logo.png",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Chevrolet-logo.png"
+ },
+ "nissan.png": {
+  "file": "Nissan 2020 logo.svg",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Nissan_2020_logo.svg"
+ },
+ "hyundai.png": {
+  "file": "Hyundai Motor Company logo.svg",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:Hyundai_Motor_Company_logo.svg"
+ },
+ "bmw.png": {
+  "file": "BMW.svg",
+  "license": "Public domain",
+  "source": "https://commons.wikimedia.org/wiki/File:BMW.svg"
+ }
+}

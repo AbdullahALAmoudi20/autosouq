@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 220" width="360" height="220"
+     role="img" aria-labelledby="t">
+  <title id="t">No picture available for this vehicle</title>
+  <rect width="360" height="220" fill="#eef2f7"/>
+  <rect x="12" y="12" width="336" height="196" rx="10" fill="none"
+        stroke="#b9c4d3" stroke-width="2" stroke-dasharray="8 6"/>
+  <path d="M92 140 L96 118 C100 110 114 106 138 104 L158 86
+           C165 80 178 78 200 78 C222 78 236 82 243 88 L262 104
+           C284 106 296 110 300 118 L302 140 Z"
+        fill="#c7d0dc"/>
+  <circle cx="140" cy="146" r="16" fill="#8e9bab"/>
+  <circle cx="256" cy="146" r="16" fill="#8e9bab"/>
+  <text x="180" y="188" text-anchor="middle" font-family="system-ui, sans-serif"
+        font-size="15" fill="#6b7788">Picture coming soon</text>
+</svg>

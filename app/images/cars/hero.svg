@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 300" width="520" height="300"
+     role="img" aria-labelledby="t">
+  <title id="t">Three cars lined up in the AutoSouq showroom</title>
+  <!-- Original artwork for the CIS209 AutoSouq project.
+       @author Ahmed Muaidi -->
+  <defs>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="c1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f59e0b"/><stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="c2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8edf5"/><stop offset="1" stop-color="#a9b6c8"/>
+    </linearGradient>
+    <linearGradient id="c3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a4265"/><stop offset="1" stop-color="#11203a"/>
+    </linearGradient>
+    <linearGradient id="gl" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#dbe6f2"/><stop offset="1" stop-color="#7d93ab"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="260" cy="268" rx="240" ry="26" fill="url(#floor)"/>
+
+  <!-- back left car -->
+  <g opacity="0.55" transform="translate(4,42) scale(0.72)">
+    <path d="M20 168 L22 136 C26 124 40 118 68 114 L92 72
+             C99 60 118 55 176 55 C232 55 252 60 259 72 L284 114
+             C316 118 332 124 336 136 L338 168 Z" fill="url(#c3)"/>
+    <path d="M98 110 L118 68 C122 62 138 61 172 61 L172 110 Z" fill="url(#gl)"/>
+    <path d="M182 61 C216 61 232 62 236 68 L256 110 L182 110 Z" fill="url(#gl)"/>
+    <circle cx="96" cy="170" r="27" fill="#12171f"/><circle cx="96" cy="170" r="13" fill="#9aa6b5"/>
+    <circle cx="262" cy="170" r="27" fill="#12171f"/><circle cx="262" cy="170" r="13" fill="#9aa6b5"/>
+  </g>
+
+  <!-- back right car -->
+  <g opacity="0.55" transform="translate(198,42) scale(0.72)">
+    <path d="M32 168 L34 140 C38 128 54 121 88 117 L120 84
+             C130 74 148 70 180 70 C208 70 224 75 234 86 L268 122
+             C296 126 314 132 320 142 L322 168 Z" fill="url(#c2)"/>
+    <path d="M126 113 L152 86 C160 79 172 77 182 77 L182 113 Z" fill="url(#gl)"/>
+    <path d="M192 77 C208 78 220 82 227 90 L250 113 L192 113 Z" fill="url(#gl)"/>
+    <circle cx="106" cy="170" r="27" fill="#12171f"/><circle cx="106" cy="170" r="13" fill="#9aa6b5"/>
+    <circle cx="250" cy="170" r="27" fill="#12171f"/><circle cx="250" cy="170" r="13" fill="#9aa6b5"/>
+  </g>
+
+  <!-- hero car, front and centre -->
+  <g transform="translate(78,86) scale(0.92)">
+    <ellipse cx="180" cy="196" rx="150" ry="11" fill="#000" opacity="0.28"/>
+    <path d="M18 168 L20 143 C24 130 44 121 82 116 L124 92
+             C140 82 164 78 196 78 C228 78 250 84 262 96 L292 118
+             C322 122 336 130 338 143 L340 168 Z" fill="url(#c1)"/>
+    <path d="M132 114 L162 92 C172 86 186 84 200 84 L200 114 Z" fill="url(#gl)"/>
+    <path d="M210 84 C230 85 246 90 254 99 L272 114 L210 114 Z" fill="url(#gl)"/>
+    <rect x="20" y="141" width="26" height="9" rx="4" fill="#fff3cf"/>
+    <rect x="312" y="141" width="26" height="9" rx="4" fill="#e05252"/>
+    <circle cx="108" cy="170" r="28" fill="#12171f"/><circle cx="108" cy="170" r="14" fill="#dbe2ea"/>
+    <circle cx="108" cy="170" r="5" fill="#7f8b9b"/>
+    <circle cx="262" cy="170" r="28" fill="#12171f"/><circle cx="262" cy="170" r="14" fill="#dbe2ea"/>
+    <circle cx="262" cy="170" r="5" fill="#7f8b9b"/>
+  </g>
+</svg>
