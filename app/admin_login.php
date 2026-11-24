@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
 
     $username = str_input('username');
-    $password = (string) ($_POST['password'] ?? '');
+    $password = raw_input('password');
 
     $result = admin_login($username, $password);
 
@@ -62,7 +62,7 @@ require __DIR__ . '/includes/header.php';
             <?php if ($lockRemaining > 0): ?>
                 <p class="notice notice-warn" role="alert">
                     Too many failed attempts. The form unlocks in
-                    <?= $lockRemaining ?> seconds.
+                    <?= e(customer_wait_text($lockRemaining)) ?>.
                 </p>
             <?php endif; ?>
 

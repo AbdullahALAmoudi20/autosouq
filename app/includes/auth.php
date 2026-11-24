@@ -5,8 +5,12 @@
  * Passwords are stored as bcrypt hashes from password_hash(); the plain
  * text is never stored or echoed back. Login failures give one generic
  * message so an attacker cannot work out which usernames exist. The
- * session id is regenerated on login, and five bad attempts lock the
- * form for 60 seconds.
+ * session id is regenerated on login. Five bad attempts for one manager
+ * id, or twenty from one IP address, lock the form for 15 minutes.
+ *
+ * The bad attempts are kept in the login_attempts table, the same one the
+ * customer sign-in uses (helpers in customer_auth.php), not in the
+ * session: an attacker could simply drop the cookie before every guess.
  *
  * @author  Fadel Al Saif (Admin Module)
  * @file    app/includes/auth.php
@@ -16,13 +20,19 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/customer_auth.php';   // shared login_attempts helpers
 
 /** Sentinel written by database/car_dealership.sql before hashes exist. */
 const HASH_NOT_SET = 'NEEDS_HASH';
 
-/** How many bad attempts before the form is temporarily locked. */
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOGIN_LOCK_SECONDS = 60;
+/**
+ * How many bad attempts before the form is temporarily locked, per
+ * manager id and per IP address. The window is the same 15 minutes as
+ * the customer lock, because the shared counting code uses that one.
+ */
+const MAX_LOGIN_ATTEMPTS    = 5;
+const MAX_LOGIN_IP_ATTEMPTS = 20;
+const LOGIN_LOCK_SECONDS    = CUSTOMER_LOCK_WINDOW;
 
 /** A manager who does nothing for this long is signed out. */
 const ADMIN_IDLE_SECONDS = 30 * 60;
@@ -65,31 +75,58 @@ function require_admin(): void
     }
 }
 
-/** Seconds remaining on the login lock, or 0 when the form is open. */
-function login_lock_remaining(): int
+/**
+ * Keyed hash of a manager id for the login_attempts table. The "admin|"
+ * prefix keeps it apart from the customer email hashes in the same
+ * column. Lowercased because the username column ignores case, so "Ali"
+ * and "ali" must share one counter.
+ */
+function admin_key_hash(string $username): string
 {
-    $lockedUntil = (int) ($_SESSION['login_locked_until'] ?? 0);
-    return max(0, $lockedUntil - time());
+    return hash_hmac('sha256', 'admin|' . mb_strtolower(trim($username)), RATE_LIMIT_SECRET);
+}
+
+/**
+ * Seconds remaining on the login lock, or 0 when the form is open. The IP
+ * lock is always checked; the manager id lock only when we know the id.
+ */
+function login_lock_remaining(string $username = ''): int
+{
+    $wait = login_key_wait('ip_hash', login_ip_hash('admin-ip'), MAX_LOGIN_IP_ATTEMPTS);
+    if (trim($username) !== '') {
+        $wait = max($wait, login_key_wait('email_hash', admin_key_hash($username), MAX_LOGIN_ATTEMPTS));
+    }
+    return $wait;
 }
 
 /**
  * Task 8 - check the submitted id and password against the admins table.
  *
+ * Each try is written to login_attempts before the password is checked
+ * and then counted (see customer_auth.php SECTION B2), so parallel
+ * requests cannot all slip in under the limit. A refused try's row is
+ * removed again, so the lock still ends on time.
+ *
  * @return array{ok: bool, message: string}
  */
 function admin_login(string $username, string $password): array
 {
-    $remaining = login_lock_remaining();
-    if ($remaining > 0) {
-        return [
-            'ok'      => false,
-            'message' => 'Too many failed attempts. Please wait ' . $remaining
-                         . ' seconds and try again.',
-        ];
-    }
-
     if ($username === '' || $password === '') {
         return ['ok' => false, 'message' => 'Please enter both your manager id and password.'];
+    }
+
+    $keyHash = admin_key_hash($username);
+    $attempt = login_attempt_start($keyHash, login_ip_hash('admin-ip'));
+
+    if ($attempt['key_count'] > MAX_LOGIN_ATTEMPTS
+        || $attempt['ip_count'] > MAX_LOGIN_IP_ATTEMPTS) {
+        login_attempt_forget($attempt['id']);
+        $remaining = max(1, login_lock_remaining($username));
+        return [
+            'ok'      => false,
+            'message' => 'Too many failed attempts. Please wait '
+                         . customer_wait_text($remaining) . ' and try again.',
+        ];
     }
 
     $stmt = db()->prepare(
@@ -101,7 +138,9 @@ function admin_login(string $username, string $password): array
     $admin = $stmt->fetch();
 
     // Seed data has no real hash yet, so refuse the login.
+    // No password was checked, so this try does not count as a failure.
     if ($admin !== false && $admin['password_hash'] === HASH_NOT_SET) {
+        login_attempt_forget($attempt['id']);
         return [
             'ok'      => false,
             'message' => 'Manager passwords have not been created yet. '
@@ -112,20 +151,22 @@ function admin_login(string $username, string $password): array
     // Same message for an unknown user and a wrong password.
     $badCredentials = ['ok' => false, 'message' => 'Incorrect manager id or password.'];
 
+    // A failure needs no extra write: its row is already in the table.
     if ($admin === false) {
         // Dummy verify so the reply takes about as long as a real one and
-        // the timing does not reveal whether the username exists.
-        password_verify($password, '$2y$10$abcdefghijklmnopqrstuv');
-        register_failed_login();
+        // the timing does not reveal whether the username exists. It must
+        // be a complete bcrypt hash, or password_verify() returns at once.
+        password_verify($password, CUSTOMER_DUMMY_HASH);
         return $badCredentials;
     }
 
     if (!password_verify($password, (string) $admin['password_hash'])) {
-        register_failed_login();
         return $badCredentials;
     }
 
     if ((int) $admin['is_active'] !== 1) {
+        // The password was right, so this is not a guess to count.
+        login_attempt_forget($attempt['id']);
         return ['ok' => false, 'message' => 'This manager account has been disabled.'];
     }
 
@@ -139,24 +180,13 @@ function admin_login(string $username, string $password): array
     $_SESSION['admin_since']    = time();
     $_SESSION['admin_last_seen'] = time();
 
-    unset($_SESSION['login_attempts'], $_SESSION['login_locked_until']);
+    // Clears this try's row and the old failures for this manager id.
+    login_attempt_clear($keyHash);
 
     db()->prepare('UPDATE admins SET last_login = NOW() WHERE admin_id = :id')
         ->execute([':id' => (int) $admin['admin_id']]);
 
     return ['ok' => true, 'message' => 'Welcome back, ' . $admin['full_name'] . '.'];
-}
-
-/** Count one bad attempt and lock the form once the limit is reached. */
-function register_failed_login(): void
-{
-    $attempts = (int) ($_SESSION['login_attempts'] ?? 0) + 1;
-    $_SESSION['login_attempts'] = $attempts;
-
-    if ($attempts >= MAX_LOGIN_ATTEMPTS) {
-        $_SESSION['login_locked_until'] = time() + LOGIN_LOCK_SECONDS;
-        $_SESSION['login_attempts']     = 0;
-    }
 }
 
 /**

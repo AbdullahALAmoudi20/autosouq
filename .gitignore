@@ -3,6 +3,9 @@ drafts/
 Hosting/
 *.zip
 
+# API keys and the Google client secret (copy secrets.example.php)
+app/includes/secrets.php
+
 # Word lock files
 ~$*
 

@@ -210,6 +210,12 @@ function is_page(string $file): bool
     return basename($_SERVER['PHP_SELF'] ?? '') === $file;
 }
 
+/** True on the manager pages, where the shop widgets are not shown. */
+function is_admin_page(): bool
+{
+    return str_starts_with(basename($_SERVER['PHP_SELF'] ?? ''), 'admin_');
+}
+
 /** Read an integer from GET or POST, clamped between $min and $max. */
 function int_input(string $key, int $default = 0, int $min = 0, int $max = PHP_INT_MAX): int
 {
@@ -225,6 +231,17 @@ function str_input(string $key, string $default = ''): string
 {
     $raw = $_POST[$key] ?? $_GET[$key] ?? $default;
     return is_string($raw) ? trim($raw) : $default;
+}
+
+/**
+ * Read a POST value exactly as typed, with no trim. Used for passwords,
+ * where spaces count. A field sent as an array (password[]=x) gives '',
+ * instead of an "Array to string conversion" warning on the page.
+ */
+function raw_input(string $key): string
+{
+    $raw = $_POST[$key] ?? '';
+    return is_string($raw) ? $raw : '';
 }
 
 

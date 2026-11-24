@@ -50,4 +50,23 @@ If you see "Database connection failed":
 
 Already have an older copy of the database? Either import
 car_dealership.sql again (this replaces the old data), or keep your data
-and run database/upgrade_gallery.sql once from the phpMyAdmin SQL tab.
+and run these once from the phpMyAdmin SQL tab, in this order:
+    database/upgrade_gallery.sql   (photo gallery)
+    database/upgrade_v3.sql        (customer accounts and the AI assistant)
+
+
+AI assistant and Google sign-in (optional)
+
+The site works without any keys: the assistant then answers with a plain
+search of the catalogue, and the "Continue with Google" button is hidden.
+To switch them on:
+
+1. Copy app/includes/secrets.example.php to app/includes/secrets.php
+   (secrets.php is ignored by git, so your keys are never uploaded).
+2. Put the OpenAI and Anthropic keys in it.
+3. For Google: in Google Cloud Console create an OAuth client of type
+   "Web application" and add this Authorised redirect URI:
+       http://localhost/autosouq/app/google_callback.php
+   then copy the client id and secret into secrets.php, with
+   GOOGLE_REDIRECT_URI set to exactly the same address.
+4. Sign in as a manager and press "Rebuild AI index" on the dashboard.

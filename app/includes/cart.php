@@ -10,7 +10,8 @@
  * @author  Abdullah Alamoudi (Team Leader and Back-End)
  * @file    app/includes/cart.php
  * @task    Task 5 (add to cart), Task 6 (checkout), Task 7 (buy),
- *          Task 12 (past purchases cookie)
+ *          Task 12 (past purchases cookie),
+ *          Extra: customer accounts (orders linked to the signed-in user)
  */
 
 declare(strict_types=1);
@@ -230,10 +231,15 @@ function cart_clear(): array
  *   4. subtract the sold units from cars.stock
  *   5. commit, empty the cart, store the order id in a cookie (Task 12)
  *
- * @param array $customer full_name, email, phone, city, address
+ * Accounts: when the buyer is signed in, $userId links the order to their
+ * account so it shows on account.php. Guests pass null and the order is
+ * stored exactly as before.
+ *
+ * @param array    $customer full_name, email, phone, city, address
+ * @param int|null $userId   users.user_id of the signed-in buyer, or null
  * @return array{ok: bool, message: string, order_id: int|null}
  */
-function cart_buy(array $customer): array
+function cart_buy(array $customer, ?int $userId = null): array
 {
     cart_init();
 
@@ -302,13 +308,14 @@ function cart_buy(array $customer): array
         ]);
         $customerId = (int) $pdo->lastInsertId();
 
-        // Step 3: order header.
+        // Step 3: order header. user_id stays NULL for a guest.
         $insOrder = $pdo->prepare(
-            'INSERT INTO orders (customer_id, total_amount, status)
-             VALUES (:customer_id, :total, :status)'
+            'INSERT INTO orders (customer_id, user_id, total_amount, status)
+             VALUES (:customer_id, :user_id, :total, :status)'
         );
         $insOrder->execute([
             ':customer_id' => $customerId,
+            ':user_id'     => $userId,
             ':total'       => $total,
             ':status'      => 'Placed',
         ]);
@@ -337,10 +344,18 @@ function cart_buy(array $customer): array
         }
 
         // Step 5: commit, then clear the cart and record the order id.
+        // The AI assistant needs no refresh here: it reads price and stock
+        // straight from cars on every question (rag.php kb_load_chunks()).
         $pdo->commit();
 
         cart_clear();
         remember_purchase($orderId);
+
+        // Accounts: save the contact details typed at checkout into any
+        // empty fields of the account, so next time the form is filled in.
+        if ($userId !== null) {
+            fill_missing_user_details($userId, $customer);
+        }
 
         return [
             'ok'       => true,
@@ -364,6 +379,40 @@ function cart_buy(array $customer): array
                           . 'Please try again.',
             'order_id' => null,
         ];
+    }
+}
+
+/**
+ * Accounts: copy phone, city and address from the checkout form into the
+ * user's row, but only where the account has nothing yet. A value the
+ * customer chose on the account page is never overwritten.
+ *
+ * This runs after the order is committed. If it fails the order is still
+ * fine, so the error is only logged.
+ */
+function fill_missing_user_details(int $userId, array $customer): void
+{
+    // Empty form values become NULL, so COALESCE leaves the column alone.
+    $clean = static function (mixed $value): ?string {
+        $value = trim((string) $value);
+        return $value === '' ? null : $value;
+    };
+
+    try {
+        db()->prepare(
+            "UPDATE users
+                SET phone   = COALESCE(NULLIF(phone, ''),   :phone),
+                    city    = COALESCE(NULLIF(city, ''),    :city),
+                    address = COALESCE(NULLIF(address, ''), :address)
+              WHERE user_id = :user_id"
+        )->execute([
+            ':phone'   => $clean($customer['phone'] ?? ''),
+            ':city'    => $clean($customer['city'] ?? ''),
+            ':address' => $clean($customer['address'] ?? ''),
+            ':user_id' => $userId,
+        ]);
+    } catch (Throwable $ex) {
+        error_log('AutoSouq could not update account details: ' . $ex->getMessage());
     }
 }
 

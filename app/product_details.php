@@ -16,10 +16,14 @@
  * (post-redirect-get), so refreshing the browser cannot add the same car
  * twice.
  *
+ * Extras: a Compare button (js/compare.js) and a monthly payment estimate
+ * (js/finance.js). The estimate is worked out here as well with the
+ * default inputs, so the figures are still there without JavaScript.
+ *
  * @author  Ali Alshehri (Catalogue and JavaScript)
  * @coauthor Ahmed Muaidi (Front-End) - page layout and styling
  * @file    app/product_details.php
- * @task    Task 4, Task 5, Task 14
+ * @task    Task 4, Task 5, Task 14, Extra: car comparison, Extra: finance calculator
  */
 
 declare(strict_types=1);
@@ -87,6 +91,21 @@ $carName = (string) $car['car_name'];   // $car is reused by the related-cars lo
 $stock        = (int) $car['stock'];
 $inCartAlready = (int) (cart_raw()[$carId] ?? 0);
 $maxAddable   = max(0, min($stock - $inCartAlready, MAX_QTY_PER_ORDER));
+
+// Finance estimate with the default inputs (20% down, 60 months, 4.5% a
+// year). A flat-rate Murabaha profit is charged on the amount financed for
+// every year of the term; js/finance.js uses the same formula.
+$finPrice     = (float) $car['price'];
+$finDownPct   = 20;
+$finTerm      = 60;
+$finRate      = 4.5;
+$finDown      = $finPrice * $finDownPct / 100;
+$finFinanced  = $finPrice - $finDown;
+$finProfit    = $finFinanced * ($finRate / 100) * ($finTerm / 12);
+$finMonthly   = ($finFinanced + $finProfit) / $finTerm;
+$finTotal     = $finPrice + $finProfit;
+// Same format as the script ("93,360 SAR"), so nothing jumps when it runs.
+$sar = static fn (float $amount): string => number_format(round($amount), 0, '.', ',') . ' ' . CURRENCY;
 
 $pageTitle       = (string) $car['car_name'];
 $pageDescription = mb_substr(strip_tags((string) $car['description']), 0, 150);
@@ -267,8 +286,117 @@ require __DIR__ . '/includes/header.php';
                 </form>
             <?php endif; ?>
 
+            <!-- Compare toggle, shown by js/compare.js (it needs JavaScript) -->
+            <div class="detail-compare">
+                <button type="button" class="compare-toggle btn btn-sm btn-quiet"
+                        data-compare-id="<?= (int) $car['car_id'] ?>"
+                        data-compare-name="<?= e($carName) ?>"
+                        aria-pressed="false" hidden>
+                    <span class="compare-toggle-label">Compare</span><span class="sr-only"> <?= e($carName) ?></span>
+                </button>
+            </div>
+
         </div>
     </article>
+
+    <?php if ($finPrice > 0): ?>
+        <!-- Monthly payment estimate. js/finance.js reads the raw price from
+             data-price and recalculates as the inputs change. Without
+             JavaScript the outputs keep the example worked out in PHP. -->
+        <section class="finance" id="finance" aria-labelledby="finance-heading"
+                 data-price="<?= e((string) $finPrice) ?>">
+            <div class="finance-head">
+                <h2 id="finance-heading">Estimate your monthly payment</h2>
+                <p class="finance-method">
+                    Flat-rate (Murabaha) estimate: profit = amount financed &times; rate &times; years.
+                    The bank confirms the final figure.
+                </p>
+            </div>
+
+            <div class="finance-grid">
+                <!-- No submit button: the figures update as you type. The
+                     inputs have no names, so if a browser submits the form
+                     anyway it just reloads this car. -->
+                <form class="finance-form" id="finance-form" method="get"
+                      action="product_details.php#finance" novalidate>
+                    <input type="hidden" name="id" value="<?= (int) $car['car_id'] ?>">
+
+                    <div class="field">
+                        <label for="fin-down">Down payment (%)</label>
+                        <div class="finance-pair">
+                            <input type="number" id="fin-down" min="10" max="50" step="5"
+                                   value="<?= $finDownPct ?>" inputmode="numeric"
+                                   aria-describedby="fin-down-hint fin-down-error">
+                            <label class="sr-only" for="fin-down-range">Down payment slider (%)</label>
+                            <input type="range" id="fin-down-range" min="10" max="50" step="5"
+                                   value="<?= $finDownPct ?>">
+                        </div>
+                        <p class="field-hint" id="fin-down-hint">
+                            Between 10% and 50%. That is
+                            <span id="fin-down-amount"><?= e($sar($finDown)) ?></span> up front.
+                        </p>
+                        <!-- Polite, not role="alert": finance.js only fills it
+                             when the visitor leaves the box, and it should not
+                             cut into what the screen reader is saying. -->
+                        <p class="field-error" id="fin-down-error" aria-live="polite"></p>
+                    </div>
+
+                    <div class="field">
+                        <label for="fin-term">Term</label>
+                        <select id="fin-term">
+                            <?php foreach ([12, 24, 36, 48, 60] as $months): ?>
+                                <option value="<?= $months ?>" <?= $months === $finTerm ? 'selected' : '' ?>>
+                                    <?= $months ?> months (<?= $months / 12 ?> <?= $months === 12 ? 'year' : 'years' ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="fin-rate">Annual profit rate (%)</label>
+                        <!-- type="text" with a decimal keypad, not type="number":
+                             a number box throws away "5,5" (comma decimal, common
+                             in Arabic and European keyboards) before the script
+                             can read it. finance.js checks the value itself. -->
+                        <input type="text" id="fin-rate" value="<?= e((string) $finRate) ?>"
+                               inputmode="decimal" autocomplete="off" spellcheck="false"
+                               aria-describedby="fin-rate-hint fin-rate-error">
+                        <p class="field-hint" id="fin-rate-hint">Between 0% and 15%, for example 4.5 or 4,5.</p>
+                        <p class="field-error" id="fin-rate-error" aria-live="polite"></p>
+                    </div>
+                </form>
+
+                <div class="finance-results-panel">
+                    <dl class="finance-results">
+                        <div class="finance-result is-main">
+                            <dt>Monthly payment</dt>
+                            <dd><output id="fin-monthly" for="fin-down fin-term fin-rate"
+                                        aria-live="polite"><?= e($sar($finMonthly)) ?></output></dd>
+                        </div>
+                        <div class="finance-result">
+                            <dt>Amount financed</dt>
+                            <dd><output id="fin-financed" for="fin-down"
+                                        aria-live="polite"><?= e($sar($finFinanced)) ?></output></dd>
+                        </div>
+                        <div class="finance-result">
+                            <dt>Total profit</dt>
+                            <dd><output id="fin-profit" for="fin-down fin-term fin-rate"
+                                        aria-live="polite"><?= e($sar($finProfit)) ?></output></dd>
+                        </div>
+                        <div class="finance-result">
+                            <dt>Total you pay</dt>
+                            <dd><output id="fin-total" for="fin-down fin-term fin-rate"
+                                        aria-live="polite"><?= e($sar($finTotal)) ?></output></dd>
+                        </div>
+                    </dl>
+                    <p class="finance-basis" id="fin-basis">
+                        Based on <?= $finDownPct ?>% down over <?= $finTerm ?> months at
+                        <?= e((string) $finRate) ?>% a year, for a price of <?= e($sar($finPrice)) ?>.
+                    </p>
+                </div>
+            </div>
+        </section>
+    <?php endif; ?>
 
     <section class="recalls" aria-labelledby="recalls-heading">
         <h2 id="recalls-heading">Safety recalls</h2>

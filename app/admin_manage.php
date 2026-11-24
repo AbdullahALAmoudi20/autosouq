@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     csrf_check();
-    $action = (string) ($_POST['action'] ?? '');
+    $action = str_input('action');   // '' for action[]=x, no warning
 
     if ($action === 'create') {                       // Task 9
         $result = admin_create_car($_POST, $_FILES['picture'] ?? null, $_FILES['gallery'] ?? null);

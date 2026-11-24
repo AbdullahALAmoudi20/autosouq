@@ -18,6 +18,39 @@ require_admin();   // nothing below runs for a guest
 
 require_once __DIR__ . '/includes/cart.php';
 
+/* AI assistant: a full rebuild of its search index, by hand. Useful after
+ * adding the API keys, since the automatic refresh after a car or article
+ * change only re-embeds what changed. */
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_check();
+    if (str_input('action') === 'rebuild_index') {
+        try {
+            $rebuild = kb_rebuild_index(true);
+            flash($rebuild['errors'] > 0 ? 'warning' : 'success', kb_rebuild_message($rebuild));
+        } catch (Throwable $ex) {
+            error_log('AutoSouq: AI index rebuild failed: ' . $ex->getMessage());
+            flash('error', APP_DEBUG ? 'The AI index could not be rebuilt: ' . $ex->getMessage()
+                                     : 'The AI index could not be rebuilt. Please try again later.');
+        }
+    }
+    redirect('admin_dashboard.php');
+}
+
+// The kb tables come from database/upgrade_v3.sql. If they are missing the
+// card explains that instead of breaking the whole dashboard.
+$aiStatus = ai_status();
+$kbStatus = null;
+try {
+    $kbStatus = kb_index_status();
+} catch (Throwable $ex) {
+    $aiStatus = [
+        'mode'   => 'off',
+        'label'  => 'Off',
+        'reason' => 'The knowledge base tables are missing from the database. Import '
+                  . 'database/upgrade_v3.sql, then rebuild the index.',
+    ];
+}
+
 $stats        = get_dashboard_stats();
 $lowStock     = get_low_stock_cars();
 $recentOrders = get_recent_orders();
@@ -82,6 +115,72 @@ require __DIR__ . '/includes/header.php';
                 <span class="stat-label">value of unsold stock</span>
             </li>
         </ul>
+    </section>
+
+    <!-- AI assistant: which mode the chat runs in, and what its index holds -->
+    <section class="panel ai-panel" aria-labelledby="ai-heading">
+        <div class="ai-panel-head">
+            <div>
+                <h2 id="ai-heading">AI assistant</h2>
+                <p class="panel-sub">The chat window customers see on every shop page.</p>
+            </div>
+            <span class="ai-mode ai-mode-<?= e($aiStatus['mode']) ?>">
+                <span class="sr-only">Mode: </span><?= e($aiStatus['label']) ?>
+            </span>
+        </div>
+
+        <p class="ai-reason"><?= e($aiStatus['reason']) ?></p>
+
+        <?php if ($kbStatus !== null): ?>
+            <dl class="ai-facts">
+                <div>
+                    <dt>Cars indexed</dt>
+                    <dd><?= (int) $kbStatus['cars'] ?></dd>
+                </div>
+                <div>
+                    <dt>Articles indexed</dt>
+                    <dd><?= (int) $kbStatus['articles'] ?></dd>
+                </div>
+                <div>
+                    <dt>Index last changed</dt>
+                    <dd>
+                        <?php if ($kbStatus['last_updated'] === null): ?>
+                            Not built yet
+                        <?php else: ?>
+                            <time datetime="<?= e(date('c', strtotime($kbStatus['last_updated']))) ?>">
+                                <?= e(date('j M Y, H:i', strtotime($kbStatus['last_updated']))) ?>
+                            </time>
+                        <?php endif; ?>
+                    </dd>
+                </div>
+            </dl>
+
+            <?php if (embeddings_enabled() && $kbStatus['missing_vectors'] > 0): ?>
+                <p class="ai-note">
+                    <?= (int) $kbStatus['missing_vectors'] ?>
+                    <?= (int) $kbStatus['missing_vectors'] === 1 ? 'entry has' : 'entries have' ?>
+                    no embedding yet, so keyword search is used for
+                    <?= (int) $kbStatus['missing_vectors'] === 1 ? 'it' : 'them' ?>.
+                    Rebuilding the index fixes this.
+                </p>
+            <?php endif; ?>
+        <?php endif; ?>
+
+        <div class="ai-actions">
+            <form method="post" action="admin_dashboard.php">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="rebuild_index">
+                <button class="btn btn-secondary btn-sm" type="submit"
+                        aria-describedby="ai-rebuild-hint"
+                        <?= $aiStatus['mode'] === 'off' ? 'disabled' : '' ?>>
+                    Rebuild AI index
+                </button>
+            </form>
+            <a class="btn btn-quiet btn-sm" href="admin_knowledge.php">Edit the knowledge base</a>
+        </div>
+        <p class="field-hint" id="ai-rebuild-hint">
+            The index also refreshes by itself whenever a car or an article changes.
+        </p>
     </section>
 
     <div class="dashboard-columns">

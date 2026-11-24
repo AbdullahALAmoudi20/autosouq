@@ -59,8 +59,25 @@ declare(strict_types=1);
     </p>
 </footer>
 
+<?php if (!is_admin_page()): ?>
+    <!-- AI assistant (RAG). js/assistant.js builds the chat window inside this
+         element and posts questions to assistant_api.php with the CSRF token. -->
+    <div id="chat-root" class="chat-root"
+         data-endpoint="assistant_api.php"
+         data-csrf="<?= e(csrf_token()) ?>"></div>
+<?php endif; ?>
+
 <script src="<?= e(asset('js/validation.js')) ?>" defer></script>
 <script src="<?= e(asset('js/site.js')) ?>" defer></script>
+<?php if (!is_admin_page()): ?>
+    <script src="<?= e(asset('js/assistant.js')) ?>" defer></script>
+    <!-- "Compare" buttons on every car card, and the compare tray -->
+    <script src="<?= e(asset('js/compare.js')) ?>" defer></script>
+<?php endif; ?>
+<?php if (is_page('product_details.php')): ?>
+    <!-- Monthly installment estimate on the car page -->
+    <script src="<?= e(asset('js/finance.js')) ?>" defer></script>
+<?php endif; ?>
 <?php if (is_page('product_details.php')): ?>
     <!-- Task 14: the help pop-up only exists on the product details page -->
     <script src="<?= e(asset('js/help.js')) ?>" defer></script>

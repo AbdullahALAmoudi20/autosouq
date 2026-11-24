@@ -7,8 +7,9 @@
  * get_related_cars().
  *
  * @author  Ahmed Muaidi (Front-End and Accessibility)
+ * @coauthor Ali Alshehri (Catalogue and JavaScript) - the Compare button
  * @file    app/includes/car_card.php
- * @task    Task 3, Task 16
+ * @task    Task 3, Task 16, Extra: car comparison
  */
 
 declare(strict_types=1);
@@ -72,4 +73,15 @@ $cardLabel = $car['car_name'] . ', ' . money((float) $car['price']) . ', '
             </p>
         </div>
     </a>
+
+    <!-- Compare toggle. It sits outside the card link because a button
+         inside a link is invalid and would also open the car page. It
+         stays hidden until js/compare.js runs, since it needs JavaScript;
+         the car name in the hidden span tells the buttons apart. -->
+    <button type="button" class="compare-toggle btn btn-sm"
+            data-compare-id="<?= $carId ?>"
+            data-compare-name="<?= e($car['car_name']) ?>"
+            aria-pressed="false" hidden>
+        <span class="compare-toggle-label">Compare</span><span class="sr-only"> <?= e($car['car_name']) ?></span>
+    </button>
 </li>

@@ -19,6 +19,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/cart.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/customer_auth.php';
 
 $pageTitle       = $pageTitle       ?? SITE_NAME;
 $pageDescription = $pageDescription ?? 'Toyota, Ford, Chevrolet, Nissan, Hyundai and BMW in one showroom.';
@@ -64,10 +65,17 @@ $flashes    = take_flashes();
             <ul>
                 <li><a href="index.php"    <?= is_page('index.php')    ? 'aria-current="page"' : '' ?>>Home</a></li>
                 <li><a href="products.php" <?= is_page('products.php') ? 'aria-current="page"' : '' ?>>Showroom</a></li>
+                <li><a href="compare.php"  <?= is_page('compare.php')  ? 'aria-current="page"' : '' ?>>Compare</a></li>
                 <li><a href="contact.php"  <?= is_page('contact.php')  ? 'aria-current="page"' : '' ?>>Contact us</a></li>
+                <?php if (is_customer()): ?>
+                    <li><a href="account.php" <?= is_page('account.php') ? 'aria-current="page"' : '' ?>>My account</a></li>
+                <?php else: ?>
+                    <li><a href="login.php" <?= is_page('login.php') || is_page('register.php') ? 'aria-current="page"' : '' ?>>Sign in</a></li>
+                <?php endif; ?>
                 <?php if (is_admin()): ?>
                     <li><a href="admin_dashboard.php" <?= is_page('admin_dashboard.php') ? 'aria-current="page"' : '' ?>>Dashboard</a></li>
                     <li><a href="admin_manage.php"    <?= is_page('admin_manage.php')    ? 'aria-current="page"' : '' ?>>Manage cars</a></li>
+                    <li><a href="admin_knowledge.php" <?= is_page('admin_knowledge.php') ? 'aria-current="page"' : '' ?>>Knowledge base</a></li>
                 <?php else: ?>
                     <li><a href="admin_login.php" <?= is_page('admin_login.php') ? 'aria-current="page"' : '' ?>>Manager</a></li>
                 <?php endif; ?>

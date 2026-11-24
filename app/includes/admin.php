@@ -8,6 +8,8 @@
  * Each car has one main picture (cars.picture) plus up to
  * MAX_GALLERY_IMAGES extra photos in car_images, and the manager can set
  * how the main picture is framed on the cards (fit, focus point, zoom).
+ * After every successful add, edit or delete the AI assistant's search
+ * index is refreshed (see admin_refresh_ai_index()).
  *
  * @author  Fadel Al Saif (Admin Module)
  * @file    app/includes/admin.php
@@ -17,6 +19,30 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/rag.php';
+
+/**
+ * Refresh the AI assistant's index after a car was added, changed or
+ * deleted, so the chat knows the new name, specs and description straight
+ * away. (Price and stock are not in the index; the chat reads them live.)
+ * The car is already saved when this runs, and a failure here (no
+ * network, API down) must never undo or block that save, so it only ever
+ * returns an extra sentence for the flash message.
+ *
+ * @return string '' when the index was refreshed without trouble
+ */
+function admin_refresh_ai_index(): string
+{
+    try {
+        $stats = kb_rebuild_index();
+        return $stats['errors'] > 0
+            ? 'The AI assistant will use keyword search for this car until the index is rebuilt.'
+            : '';
+    } catch (Throwable $ex) {
+        error_log('AutoSouq: AI index refresh failed: ' . $ex->getMessage());
+        return 'The AI assistant index could not be refreshed; use "Rebuild AI index" on the dashboard.';
+    }
+}
 
 /**
  * Task 10 - search the catalogue by name, brand or body style.
@@ -377,13 +403,6 @@ function admin_create_car(array $input, ?array $file, ?array $galleryFiles = nul
         insert_gallery_rows($carId, $gallery['saved']);
 
         $pdo->commit();
-
-        return [
-            'ok'      => true,
-            'message' => trim('Added "' . $input['car_name'] . '" to the showroom. '
-                         . implode(' ', $gallery['errors'])),
-            'car_id'  => $carId,
-        ];
     } catch (Throwable $ex) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
@@ -400,6 +419,17 @@ function admin_create_car(array $input, ?array $file, ?array $galleryFiles = nul
             'car_id'  => null,
         ];
     }
+
+    // Outside the try block on purpose: the car is committed by now, and
+    // the catch above would delete its photos.
+    $aiNote = admin_refresh_ai_index();
+
+    return [
+        'ok'      => true,
+        'message' => trim('Added "' . $input['car_name'] . '" to the showroom. '
+                     . implode(' ', $gallery['errors']) . ' ' . $aiNote),
+        'car_id'  => $carId,
+    ];
 }
 
 /**
@@ -592,7 +622,9 @@ function admin_update_car(int $carId, array $input, ?array $file, ?array $galler
         $message .= ' Removed ' . $count . ' ' . ($count === 1 ? 'photo' : 'photos') . '.';
     }
 
-    return ['ok' => true, 'message' => trim($message . ' ' . implode(' ', $gallery['errors']))];
+    $aiNote = admin_refresh_ai_index();
+
+    return ['ok' => true, 'message' => trim($message . ' ' . implode(' ', $gallery['errors']) . ' ' . $aiNote)];
 }
 
 /**
@@ -639,7 +671,10 @@ function admin_delete_car(int $carId): array
             delete_upload_file((string) $fileName);
         }
 
-        return ['ok' => true, 'message' => 'Deleted "' . $car['car_name'] . '".'];
+        // admin_refresh_ai_index() never throws, so it is safe inside the try.
+        $aiNote = admin_refresh_ai_index();
+
+        return ['ok' => true, 'message' => trim('Deleted "' . $car['car_name'] . '". ' . $aiNote)];
     } catch (Throwable $ex) {
         return [
             'ok'      => false,

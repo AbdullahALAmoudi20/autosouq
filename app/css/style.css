@@ -1673,3 +1673,651 @@ body.has-viewer { overflow: hidden; }
     .car-card:hover .car-card-media img.framed-img { transform: scale(var(--zoom, 1)); }
     .enlarge-hint { transition: none; }
 }
+
+
+/* 20. CUSTOMER ACCOUNTS (Extra: accounts and Google sign-in)
+   Sign in, sign up, sign out, the account page and the note on checkout.
+   Builds on the existing login-shell / login-card / panel / order-card /
+   badge / field rules; only what those do not cover is added here.
+   Mobile first: everything is one column until there is room for two. */
+
+/* --- sign in / sign up cards --- */
+.page-account-auth .login-card { padding: 1.25rem; }
+.page-account-auth .login-shell { padding-block: var(--gap); }
+
+/* Error summary at the top of a form. role="alert" is on the element, so
+   a screen reader reads it as soon as the page loads. The left bar and
+   the bold title mean it does not rely on colour alone. */
+.form-errors {
+    background: var(--danger-bg);
+    color: var(--danger-fg);
+    border: 1px solid var(--danger-line);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+    padding: .8rem 1rem;
+    margin-bottom: 1.25rem;
+}
+.form-errors-title { font-weight: 700; margin: 0; }
+.form-errors ul { margin: .45rem 0 0; padding-left: 1.1rem; }
+.form-errors li + li { margin-top: .2rem; }
+.form-errors a { color: inherit; text-decoration: underline; font-weight: 600; }
+.form-errors a:hover { color: inherit; text-decoration-thickness: 2px; }
+
+/* Per-field message, shown under the input that has the problem. */
+.field-error a { color: inherit; margin-left: .25rem; }
+
+/* "Continue with Google". Colours follow Google's dark-theme button, so
+   they are fixed rather than taken from our palette. */
+.btn-google {
+    background: #131314;
+    color: #e3e3e3;
+    border: 1px solid #8e918f;
+    gap: .75rem;
+    min-height: 2.9rem;
+}
+.btn-google:hover { background: #1f1f20; color: #fff; border-color: #c4c7c5; }
+.google-mark { flex: none; width: 20px; height: 20px; }
+
+/* "or" line between the Google button and the email form. */
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin: 1.1rem 0;
+    color: var(--ink-faint);
+    font-size: .84rem;
+    text-align: center;
+}
+.auth-divider::before,
+.auth-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--line-strong);
+}
+
+/* Optional contact details on the sign-up form. */
+.auth-optional {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: .9rem 1rem .2rem;
+    margin: 0 0 1.25rem;
+    min-width: 0;            /* lets the fieldset shrink on a 375px screen */
+}
+.auth-optional legend { font-weight: 700; font-size: .92rem; padding: 0 .35rem; }
+.auth-optional-hint { margin: 0 0 .9rem; }
+
+.auth-switch { margin: 1.25rem 0 0; text-align: center; font-size: .92rem; color: var(--ink-soft); }
+
+.auth-benefits { margin: 0 0 1rem; padding-left: 1.1rem; }
+.auth-benefits li + li { margin-top: .4rem; }
+
+/* The read-only email on the account page looks different from the
+   inputs that can be edited. */
+.field input[readonly] {
+    background: var(--surface-sunk);
+    color: var(--ink-soft);
+    border-style: dashed;
+    cursor: default;
+}
+
+/* --- sign out confirmation (GET logout.php) --- */
+.auth-confirm { max-width: 32rem; margin: var(--gap-lg) auto; }
+.auth-confirm-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin: 0; }
+
+/* --- account page --- */
+.account-head {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+}
+.account-signout { margin: 0; }
+
+/* "On this page" links, so a keyboard user can jump to the orders without
+   tabbing through both forms. */
+.account-jump { margin: 0 0 var(--gap); }
+.account-jump ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+.account-jump a {
+    display: inline-block;
+    padding: .4rem .8rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    font-size: .86rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.account-jump a:hover { border-color: var(--ink-soft); }
+
+.account-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+    align-items: start;
+    margin-bottom: var(--gap-lg);
+}
+.account-panel { min-width: 0; }
+.account-panel .btn { margin-top: .25rem; }
+
+/* The heading targets of the jump links get room above them. */
+.account-panel h2, .account-orders h2 { scroll-margin-top: 6rem; }
+
+.account-orders { margin-bottom: var(--gap-lg); }
+.account-orders-sub { margin-bottom: 1rem; }
+.account-order-list { grid-template-columns: 1fr; }
+
+.account-order-items li { align-items: flex-start; }
+.account-item-name { display: flex; flex-direction: column; min-width: 0; }
+.account-item-name a { overflow-wrap: anywhere; }
+.account-item-name small { color: var(--ink-faint); font-size: .8rem; }
+.account-order-items .qty { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+.account-order-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .6rem;
+    border-top: 1px solid var(--line);
+    margin: .8rem 0 0;
+    padding-top: .6rem;
+    font-size: .92rem;
+}
+.account-order-total span { color: var(--ink-soft); }
+.account-order-total strong { font-variant-numeric: tabular-nums; }
+
+/* --- checkout: "Have an account?" note above the buyer form --- */
+.checkout-account-note { margin-top: 0; font-size: .92rem; }
+.checkout-account-note a { color: inherit; font-weight: 700; }
+
+/* --- wider screens --- */
+@media (min-width: 600px) {
+    .page-account-auth .login-card { padding: 2rem; }
+    .account-head {
+        flex-direction: row;
+        align-items: flex-end;
+        justify-content: space-between;
+    }
+    .account-order-list { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+}
+
+@media (min-width: 900px) {
+    .account-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Smooth scrolling for the jump links is already switched off by the
+   reduced-motion rule in section 2; nothing here animates. */
+@media (prefers-reduced-motion: reduce) {
+    .btn-google, .account-jump a { transition: none; }
+}
+
+
+/* 21. AI ASSISTANT ADMIN (Extra: knowledge base)
+   The assistant card on the dashboard and the knowledge base page.
+   @author Fadel Al Saif (Admin Module) */
+
+/* --- AI assistant card on the dashboard (admin_dashboard.php) ---
+   Uses the panel look from section 14. The mode badge always carries a
+   word ("AI answers", "Search only", "Off"), so colour is never the only
+   signal. */
+.ai-panel { margin-bottom: var(--gap-lg); }
+
+.ai-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: .5rem 1rem;
+}
+.ai-panel-head .panel-sub { margin-bottom: .75rem; }
+
+.ai-mode {
+    display: inline-block;
+    padding: .2rem .7rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface-sunk);
+    color: var(--ink);
+    font-size: .8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.ai-mode-ai     { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-line); }
+.ai-mode-search { background: var(--info-bg);    color: var(--info-fg);    border-color: var(--info-line); }
+.ai-mode-off    { background: var(--danger-bg);  color: var(--danger-fg);  border-color: var(--danger-line); }
+
+.ai-reason { color: var(--ink-soft); font-size: .92rem; max-width: 70ch; }
+
+/* Three small figures; one column on a phone, a row from 520px up. */
+.ai-facts {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: .6rem;
+    margin: 0 0 1rem;
+}
+.ai-facts > div {
+    background: var(--surface-alt);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: .6rem .8rem;
+}
+.ai-facts dt {
+    font-size: .76rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: var(--ink-faint);
+    font-weight: 700;
+}
+.ai-facts dd { margin: .15rem 0 0; font-size: 1.1rem; font-weight: 800; color: var(--navy-900); }
+
+.ai-note {
+    background: var(--warn-bg);
+    color: var(--warn-fg);
+    border: 1px solid var(--warn-line);
+    border-radius: var(--radius-sm);
+    padding: .55rem .8rem;
+    font-size: .88rem;
+}
+
+.ai-actions { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; }
+.ai-actions form { margin: 0; }
+
+@media (min-width: 520px) {
+    .ai-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* --- Knowledge base page (admin_knowledge.php) --- */
+
+/* Title cell: the title link with a short preview of the text below it. */
+.kb-cell-title span { display: flex; flex-direction: column; gap: .15rem; }
+.kb-cell-title a { font-weight: 600; }
+.kb-cell-title small {
+    color: var(--ink-faint);
+    font-size: .8rem;
+    font-weight: 400;
+    max-width: 60ch;
+}
+
+/* Hidden articles are faded but stay readable (contrast still passes),
+   and the status cell says "Hidden" in words. */
+.kb-row-hidden .kb-cell-title a,
+.kb-row-hidden .kb-cell-title small { color: var(--ink-soft); }
+
+.kb-state {
+    display: inline-block;
+    padding: .15rem .6rem;
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.kb-state.is-on  { background: var(--success-bg); color: var(--success-fg); border-color: var(--success-line); }
+.kb-state.is-off { background: var(--surface-sunk); color: var(--ink-soft); }
+
+.kb-actions { flex-wrap: wrap; }
+
+/* Form and tips: stacked on a phone, side by side on wider screens. */
+.kb-form { margin-bottom: var(--gap-lg); }
+.kb-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--gap);
+    align-items: start;
+}
+.kb-form textarea { min-height: 14rem; line-height: 1.55; }
+
+.kb-tips {
+    background: var(--navy-800);
+    color: rgba(255, 255, 255, .88);
+    border-radius: var(--radius);
+    padding: 1.25rem 1.35rem;
+    font-size: .9rem;
+}
+.kb-tips h2 { color: #fff; font-size: 1rem; }
+.kb-tips ul { margin: 0; padding-left: 1.1rem; display: grid; gap: .5rem; }
+
+@media (min-width: 900px) {
+    .kb-form-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 18rem); }
+}
+
+/* Phone view of the article table: section 16 turns .data-table rows into
+   cards; this lets the three buttons wrap instead of overflowing. */
+@media (max-width: 780px) {
+    .kb-actions { justify-content: flex-start; gap: .5rem; }
+    .kb-actions::before { width: 100%; }
+}
+
+
+/* 22. EXTRA FRONT-END FEATURES
+   Compare buttons and tray (js/compare.js), the compare page
+   (compare.php), the finance estimate on the car page (js/finance.js) and
+   the AutoSouq assistant window (js/assistant.js).
+   Uses the dark theme tokens from section 18. Mobile first: the base rules
+   are for a phone, the min-width queries widen them.
+   @author Ali Alshehri (Catalogue and JavaScript) */
+
+/* .btn sets display, which would beat the hidden attribute. The toggles
+   and panels rely on hidden until the script shows them. */
+.compare-toggle[hidden],
+.compare-tray[hidden],
+.chat-panel[hidden],
+.chat-suggestions[hidden] { display: none !important; }
+
+/* Programmatic focus target after the compare tray closes. */
+.site-main[tabindex="-1"]:focus { outline: none; }
+
+/* --- compare toggle on the cards and the car page --- */
+.car-card { position: relative; }
+.car-card > .compare-toggle {
+    position: absolute; top: .6rem; right: .6rem; z-index: 2;
+    background: rgb(5 7 13 / .78); color: var(--ink);
+    border: 1px solid rgb(255 255 255 / .16);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-radius: 999px; font-size: .78rem; padding: .32rem .7rem;
+}
+.car-card > .compare-toggle:hover { background: rgb(5 7 13 / .92); color: #fff; border-color: rgb(255 255 255 / .3); }
+.compare-toggle.is-picked,
+.car-card > .compare-toggle.is-picked {
+    background: var(--accent-dim); color: #fff; border-color: transparent;
+}
+.compare-toggle.is-picked:hover:not(:disabled) { background: var(--accent-dim); color: #fff; }
+/* A tick before the label, so the picked state is not shown by colour alone.
+   The "/ ''" gives it empty alt text: the label stays "Compare" and screen
+   readers get the state from aria-pressed. The first line is the fallback
+   for browsers that do not know the alt-text syntax. */
+.compare-toggle.is-picked .compare-toggle-label::before {
+    content: "\2713\00a0";
+    content: "\2713\00a0" / "";
+}
+.compare-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.detail-compare { margin-top: 1rem; }
+
+/* --- compare tray, fixed bottom left (the chat launcher is bottom right) --- */
+.compare-tray {
+    position: fixed; left: .75rem; right: calc(.75rem + 56px + .75rem); bottom: .75rem; z-index: 55;
+    padding: .8rem .9rem; border-radius: var(--radius);
+    background: rgb(12 17 28 / .94); color: var(--ink);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    box-shadow: var(--lip), 0 24px 50px -24px rgb(0 0 0 / .9);
+}
+.compare-tray-title {
+    font-family: var(--mono); font-size: .74rem; font-weight: 500; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-soft); margin: 0 0 .5rem;
+}
+.compare-tray-list { list-style: none; margin: 0 0 .6rem; padding: 0; display: flex; flex-wrap: wrap; gap: .35rem; }
+.compare-tray-list li {
+    display: flex; align-items: center; gap: .25rem; max-width: 100%;
+    padding: .15rem .2rem .15rem .6rem; border-radius: 999px;
+    background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: .82rem;
+}
+.compare-tray-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.compare-tray-remove {
+    flex: none; display: grid; place-items: center; width: 1.6rem; height: 1.6rem;
+    border: 0; border-radius: 50%; background: transparent; color: var(--ink-soft);
+    font: inherit; font-size: 1.1rem; line-height: 1; cursor: pointer;
+}
+.compare-tray-remove:hover { background: rgb(255 255 255 / .08); color: #fff; }
+.compare-tray-remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.compare-tray-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.compare-tray-go.is-disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+.compare-tray-msg { margin: .5rem 0 0; font-size: .82rem; color: var(--warn-fg); }
+.compare-tray-msg:empty { display: none; }
+/* Room at the bottom of the page so the tray never hides the footer links.
+   js/compare.js replaces this with the tray's measured height (the pills
+   wrap, so the real height varies); these values are the first-paint guess. */
+body.has-compare-tray { padding-bottom: 9rem; }
+
+/* --- compare page --- */
+.compare-picker .field { flex: 1 1 14rem; }
+.compare-scroll {
+    overflow-x: auto; margin-bottom: 1rem;
+    border-radius: var(--radius); background: var(--surface-1); box-shadow: var(--lip);
+    scrollbar-width: thin;
+}
+.compare-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.compare-table { min-width: 34rem; font-size: .92rem; }
+.compare-table caption {
+    caption-side: top; text-align: left; padding: .9rem 1rem .4rem;
+    color: var(--ink-faint); font-size: .84rem;
+}
+.compare-table th, .compare-table td {
+    padding: .7rem 1rem; text-align: left; vertical-align: top;
+    border-bottom: 1px solid var(--line);
+}
+.compare-table tbody tr:last-child th, .compare-table tbody tr:last-child td { border-bottom: 0; }
+.compare-table th[scope="row"] {
+    position: sticky; left: 0; z-index: 1; background: var(--surface-1);
+    font-family: var(--mono); font-size: .72rem; font-weight: 500; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--ink-faint); white-space: nowrap;
+}
+.compare-corner { position: sticky; left: 0; z-index: 1; background: var(--surface-1); }
+.compare-car { width: 30%; min-width: 10rem; font-weight: 600; }
+.compare-photo {
+    aspect-ratio: 16 / 10; overflow: hidden; border-radius: var(--radius-sm);
+    background: var(--surface-2); margin-bottom: .6rem;
+}
+.compare-photo img { width: 100%; height: 100%; display: block; }
+.compare-name { display: block; color: var(--ink); text-decoration: none; line-height: 1.3; }
+.compare-name:hover { color: #fff; text-decoration: underline; }
+.compare-remove { display: inline-block; margin-top: .35rem; font-size: .8rem; font-weight: 500; color: var(--ink-soft); }
+.compare-remove:hover { color: #ff8a8a; }
+/* The Remove row sits straight under the car names, so it reads as part of
+   the column head even though it is a normal body row. */
+.compare-table thead th { border-bottom: 0; padding-bottom: .25rem; }
+.compare-remove-row th, .compare-remove-row td { padding-top: 0; }
+.compare-remove-row .compare-remove { margin-top: 0; }
+.compare-table td { font-variant-numeric: tabular-nums; }
+.compare-table td.is-best { background: rgb(232 163 61 / .08); font-weight: 650; color: #fff; }
+.best-tag {
+    display: inline-block; margin-left: .4rem; padding: .05rem .45rem; border-radius: 999px;
+    font-family: var(--mono); font-size: .66rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--signal); border: 1px solid rgb(232 163 61 / .45); vertical-align: middle;
+}
+.compare-stock { color: var(--success-fg); font-weight: 600; }
+.compare-stock.is-zero { color: var(--danger-fg); }
+.compare-colours { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; font-size: .86rem; }
+.compare-colours li { display: flex; align-items: center; gap: .4rem; }
+.compare-foot { color: var(--ink-faint); font-size: .84rem; }
+
+/* --- finance estimate on the car page --- */
+.finance {
+    margin-bottom: var(--gap-lg); padding: 1.25rem;
+    border-radius: var(--radius); background: var(--surface-1); box-shadow: var(--lip);
+}
+.finance-head h2 { font-size: 1.25rem; margin-bottom: .25em; }
+.finance-method { color: var(--ink-faint); font-size: .86rem; max-width: 62ch; }
+.finance-grid { display: grid; gap: 1.25rem; }
+.finance-form { margin: 0; }
+.finance-pair { display: flex; align-items: center; gap: .9rem; }
+.field .finance-pair input[type="number"] { width: 5.5rem; flex: none; }
+.finance-pair input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--accent); }
+.finance-results-panel {
+    padding: 1rem 1.1rem; border-radius: var(--radius-sm);
+    background: var(--surface-2); box-shadow: var(--lip); align-self: start;
+}
+.finance-results { margin: 0; display: grid; gap: .1rem; }
+.finance-result {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 1rem;
+    padding: .55rem 0; border-bottom: 1px solid var(--line);
+}
+.finance-result:last-child { border-bottom: 0; }
+.finance-result dt { color: var(--ink-faint); font-size: .88rem; }
+.finance-result dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.finance-result.is-main { flex-direction: column; align-items: flex-start; gap: .1rem; padding-top: 0; }
+.finance-result.is-main dt {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase;
+}
+.finance-result.is-main dd { font-size: 2rem; font-weight: 650; letter-spacing: -.02em; color: var(--ink); text-align: left; }
+.finance-basis { margin: .6rem 0 0; font-size: .8rem; color: var(--ink-faint); }
+
+/* --- AutoSouq assistant --- */
+/* The launcher is fixed in the bottom corner (about 4.25rem from the
+   bottom edge with its gap), so a link or card that gets focus at the
+   bottom of the window could scroll in behind it (WCAG 2.4.11). 5rem keeps
+   it clear. While the compare tray is open, js/compare.js sets a larger
+   inline scroll-padding-bottom (the tray is taller than the launcher, so
+   that value covers both) and clears it when the tray closes, which brings
+   this one back. */
+html { scroll-padding-bottom: 5rem; }
+.chat-root { position: static; }
+.chat-launcher {
+    position: fixed; right: .75rem; bottom: .75rem; z-index: 60;
+    display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+    width: 56px; height: 56px; padding: 0; border: 0; border-radius: 999px; cursor: pointer;
+    background: var(--accent-dim); color: #fff; font: inherit; font-weight: 600;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 18px 40px -16px rgb(0 0 0 / .9);
+    transition: background-color .15s ease, transform .15s ease;
+}
+.chat-launcher:hover { background: var(--accent); }
+.chat-launcher:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.chat-launcher-icon { flex: none; }
+/* On a phone the launcher is a round icon; the text stays for screen readers. */
+.chat-launcher-text {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); white-space: nowrap;
+}
+.chat-root.is-open .chat-launcher { display: none; }
+
+/* Phone: a sheet across the bottom of the screen. */
+.chat-panel {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 70;
+    display: flex; flex-direction: column;
+    height: 88vh; height: 88dvh;
+    padding: .9rem .9rem calc(.9rem + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: var(--surface-1); color: var(--ink);
+    box-shadow: var(--lip), 0 -20px 60px -20px rgb(0 0 0 / .9);
+    /* On a short screen (200% zoom, landscape phone) the panel scrolls, so
+       Send and the note can always be reached instead of spilling out. */
+    overflow-y: auto; overscroll-behavior: contain;
+}
+/* Only the log gives up space; the controls keep their natural height. */
+.chat-head, .chat-intro, .chat-suggestions, .chat-form, .chat-note { flex: none; }
+.chat-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .35rem; }
+.chat-title { font-size: 1.05rem; margin: 0 auto 0 0; }
+.chat-new, .chat-close {
+    font: inherit; cursor: pointer; color: var(--ink-soft);
+    background: transparent; border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+}
+.chat-new { padding: .3rem .65rem; font-size: .8rem; font-weight: 500; }
+.chat-close { display: grid; place-items: center; width: 2.1rem; height: 2.1rem; font-size: 1.35rem; line-height: 1; }
+.chat-new:hover:not(:disabled), .chat-close:hover { color: #fff; background: rgb(255 255 255 / .06); }
+.chat-new:disabled { opacity: .5; cursor: not-allowed; }
+.chat-new:focus-visible, .chat-close:focus-visible, .chat-chip:focus-visible,
+.chat-log:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.chat-intro { font-size: .84rem; color: var(--ink-soft); margin: 0 0 .6rem; }
+
+.chat-log {
+    flex: 1 1 6rem; min-height: 3rem; overflow-y: auto; overscroll-behavior: contain;
+    display: flex; flex-direction: column; gap: .65rem;
+    padding: .25rem .1rem .5rem; scrollbar-width: thin;
+}
+.chat-msg { display: flex; flex-direction: column; max-width: 88%; }
+.chat-msg-user { align-self: flex-end; align-items: flex-end; }
+.chat-msg-bot  { align-self: flex-start; align-items: flex-start; }
+.chat-bubble {
+    margin: 0; padding: .55rem .8rem; border-radius: 14px;
+    font-size: .92rem; line-height: 1.5;
+    white-space: pre-wrap; overflow-wrap: anywhere;
+}
+.chat-msg-user .chat-bubble { background: var(--accent-dim); color: #fff; border-bottom-right-radius: 4px; }
+.chat-msg-bot .chat-bubble  { background: var(--surface-2); color: var(--ink); box-shadow: var(--lip); border-bottom-left-radius: 4px; }
+.chat-msg-error .chat-bubble { background: var(--danger-bg); color: var(--danger-fg); box-shadow: inset 0 0 0 1px var(--danger-line); }
+.chat-mode { margin: .3rem 0 0; font-size: .74rem; color: var(--ink-faint); }
+.chat-sources { margin-top: .35rem; font-size: .8rem; }
+.chat-sources-title {
+    margin: 0 0 .15rem; font-family: var(--mono); font-size: .66rem; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--ink-faint);
+}
+.chat-sources-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .25rem .75rem; }
+.chat-sources-list span { color: var(--ink-soft); }
+
+.chat-typing { flex-direction: row; gap: .3rem; padding: .7rem .85rem; border-radius: 14px; background: var(--surface-2); box-shadow: var(--lip); }
+.chat-typing-dot {
+    width: .45rem; height: .45rem; border-radius: 50%; background: var(--ink-soft);
+    animation: chat-bounce 1.1s ease-in-out infinite;
+}
+.chat-typing-dot:nth-child(2) { animation-delay: .15s; }
+.chat-typing-dot:nth-child(3) { animation-delay: .3s; }
+@keyframes chat-bounce {
+    0%, 80%, 100% { opacity: .35; transform: translateY(0); }
+    40%           { opacity: 1;   transform: translateY(-3px); }
+}
+
+.chat-suggestions { display: flex; flex-wrap: wrap; gap: .4rem; margin: .25rem 0 .6rem; }
+.chat-chip {
+    font: inherit; font-size: .8rem; cursor: pointer; padding: .35rem .7rem; border-radius: 999px;
+    color: var(--ink); background: rgb(255 255 255 / .02); border: 1px solid var(--line-strong);
+}
+.chat-chip:hover:not(:disabled) { background: #f2f5fa; color: #05070d; border-color: #f2f5fa; }
+.chat-chip:disabled { opacity: .5; cursor: not-allowed; }
+
+.chat-form { margin: 0; padding-top: .6rem; border-top: 1px solid var(--line); }
+.chat-label { display: block; font-weight: 600; font-size: .84rem; margin-bottom: .3rem; }
+.chat-input {
+    display: block; width: 100%; min-height: 3rem; max-height: 9rem; resize: vertical;
+    padding: .55rem .7rem; font: inherit; font-size: 1rem;   /* 16px stops iOS zooming in */
+    color: var(--ink); background: var(--bg-alt);
+    border: 1px solid var(--line-strong); border-radius: var(--radius-sm);
+}
+.chat-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgb(91 140 255 / .18); outline: none; }
+.chat-input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.chat-form-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .45rem; }
+.chat-count { font-family: var(--mono); font-size: .72rem; color: var(--ink-faint); }
+.chat-count.is-near-limit { color: var(--warn-fg); }
+.chat-note { margin: .5rem 0 0; font-size: .72rem; color: var(--ink-faint); line-height: 1.4; }
+
+/* Wider than a phone: a floating panel above the launcher, and the
+   launcher shows its text. */
+@media (min-width: 481px) {
+    .chat-launcher {
+        right: 1.25rem; bottom: 1.25rem;
+        width: auto; height: auto; padding: .75rem 1.1rem .75rem .95rem;
+    }
+    .chat-launcher-text { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+    .chat-root.is-open .chat-launcher { display: inline-flex; }
+
+    .chat-panel {
+        left: auto; right: 1.25rem; bottom: calc(1.25rem + 3.4rem + .75rem);
+        width: min(25rem, calc(100vw - 2.5rem));
+        height: min(37rem, calc(100vh - 8.5rem)); height: min(37rem, calc(100dvh - 8.5rem));
+        padding: 1rem; border-radius: var(--radius-lg);
+        box-shadow: var(--lip), 0 30px 80px -30px rgb(0 0 0 / .95);
+    }
+
+    .compare-tray {
+        left: 1.25rem; right: auto; bottom: 1.25rem;
+        width: min(22rem, calc(100vw - 14rem));
+    }
+    body.has-compare-tray { padding-bottom: 7rem; }
+}
+
+/* Wide but short (200% zoom, landscape phone): there is no room for the
+   panel above the launcher, so it takes the full height and covers the
+   launcher, which would otherwise sit hidden behind it. js/assistant.js uses
+   the same breakpoint to decide whether to reopen the panel. */
+@media (min-width: 481px) and (max-height: 520px) {
+    .chat-panel { top: .75rem; bottom: .75rem; height: auto; }
+    .chat-root.is-open .chat-launcher { display: none; }
+}
+
+@media (min-width: 780px) {
+    .finance { padding: 1.4rem 1.5rem; }
+    .finance-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .chat-typing-dot { animation: none; opacity: .7; }
+    .chat-launcher { transition: none; }
+}
+
+@media print {
+    .chat-root, .compare-tray, .compare-toggle, .compare-picker { display: none !important; }
+}

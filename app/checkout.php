@@ -9,14 +9,18 @@
  * Each action is a POST followed by a redirect so refreshing the page
  * cannot repeat a purchase.
  *
+ * Accounts: a signed-in customer gets the buyer form filled in from their
+ * account, and the order is linked to the account. Guests can still buy.
+ *
  * @author  Abdullah Alamoudi (Team Leader and Back-End)
  * @file    app/checkout.php
- * @task    Task 6, Task 7
+ * @task    Task 6, Task 7, Extra: customer accounts
  */
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/includes/cart.php';
+require_once __DIR__ . '/includes/customer_auth.php';
 
 /** Buyer form values, refilled when validation sends the form back. */
 $buyer = [
@@ -27,9 +31,17 @@ $buyer = [
     'address'   => '',
 ];
 
+// Accounts: the signed-in customer, or null for a guest. $buyerTyped is
+// set once the visitor has posted the form, so their typed values are
+// never replaced by the saved ones.
+$account    = current_user();
+$buyerTyped = false;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
-    $action = (string) ($_POST['action'] ?? '');
+    // str_input() gives '' for action[]=x, where a (string) cast would
+    // print an "Array to string" warning with the server path in it.
+    $action = str_input('action');
 
     switch ($action) {
 
@@ -53,6 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         /* Task 7: buy */
         case 'buy':
+            $buyerTyped = true;
             $buyer = [
                 'full_name' => str_input('full_name'),
                 'email'     => str_input('email'),
@@ -85,7 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;   // re-render the form with the typed values
             }
 
-            $result = cart_buy($buyer);
+            // Accounts: link the order to the signed-in customer, if any.
+            $result = cart_buy($buyer, $account === null ? null : (int) $account['user_id']);
 
             if ($result['ok']) {
                 flash('success', $result['message']);
@@ -97,6 +111,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('error', $result['message']);
             break;
     }
+}
+
+// Accounts: fill the buyer form from the account on a fresh visit.
+if ($account !== null && !$buyerTyped) {
+    $buyer = [
+        'full_name' => (string) $account['full_name'],
+        'email'     => (string) $account['email'],
+        'phone'     => (string) ($account['phone'] ?? ''),
+        'city'      => (string) ($account['city'] ?? ''),
+        'address'   => (string) ($account['address'] ?? ''),
+    ];
 }
 
 $lines   = cart_detailed();
@@ -278,6 +303,21 @@ require __DIR__ . '/includes/header.php';
                     the <?= $units === 1 ? 'car' : 'cars' ?> for 48 hours, and you pay
                     at the showroom.
                 </p>
+
+                <!-- Accounts: tell a guest they can sign in first, and tell a
+                     signed-in customer where the order will be saved. -->
+                <?php if ($account === null): ?>
+                    <p class="notice notice-info checkout-account-note">
+                        Have an account?
+                        <a href="login.php?next=checkout.php">Sign in to track this order</a>.
+                        Your cart will still be here.
+                    </p>
+                <?php else: ?>
+                    <p class="notice notice-info checkout-account-note">
+                        Signed in as <strong><?= e($account['full_name']) ?></strong>.
+                        This order will be saved to <a href="account.php">your account</a>.
+                    </p>
+                <?php endif; ?>
 
                 <form method="post" action="checkout.php"
                       data-validate="buy" novalidate>
