@@ -1462,7 +1462,8 @@ code { background: var(--surface-2); color: var(--ink); }
     -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
             mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
 }
-.marquee-track { display: flex; width: max-content; animation: marquee-shift 38s linear infinite; }
+/* six copies of the list, moving by half (three copies) per loop: same speed as before */
+.marquee-track { display: flex; width: max-content; animation: marquee-shift 110s linear infinite; }
 .marquee:hover .marquee-track { animation-play-state: paused; }
 .marquee-list { display: flex; gap: 1.2rem; list-style: none; margin: 0; padding: 0 .6rem; }
 @keyframes marquee-shift { to { transform: translateX(-50%); } }

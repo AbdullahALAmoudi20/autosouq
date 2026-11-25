@@ -74,11 +74,15 @@ require __DIR__ . '/includes/header.php';
     </div>
 </section>
 
-<!-- The real brand logos, scrolling. The list is printed twice so the loop
-     has no gap; the second copy is hidden from screen readers. -->
+<!-- The real brand logos, scrolling. The track holds two identical halves,
+     each with the list three times, so one half is wider than any screen.
+     The animation slides exactly one half to the left and starts again, so
+     the logos that leave on the left are already coming in on the right
+     and there is never a gap or a jump. Only the first list is read by
+     screen readers and reachable with Tab. -->
 <section class="marquee" aria-label="Brands we sell">
     <div class="marquee-track">
-        <?php foreach ([false, true] as $copy): ?>
+        <?php for ($i = 0; $i < 6; $i++): $copy = $i > 0; ?>
             <ul class="marquee-list"<?= $copy ? ' aria-hidden="true"' : '' ?>>
                 <?php foreach ($brands as $brand): ?>
                     <li>
@@ -88,7 +92,7 @@ require __DIR__ . '/includes/header.php';
                     </li>
                 <?php endforeach; ?>
             </ul>
-        <?php endforeach; ?>
+        <?php endfor; ?>
     </div>
 </section>
 
