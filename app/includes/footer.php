@@ -46,6 +46,7 @@ declare(strict_types=1);
                 <li><a href="products.php">Showroom</a></li>
                 <li><a href="checkout.php">Your cart</a></li>
                 <li><a href="contact.php">Contact us</a></li>
+                <li><a href="privacy.php">Privacy policy</a></li>
                 <li><a href="admin_login.php">Manager sign in</a></li>
             </ul>
         </nav>
