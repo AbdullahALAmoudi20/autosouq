@@ -76,9 +76,10 @@ $flashes    = take_flashes();
                     <li><a href="admin_dashboard.php" <?= is_page('admin_dashboard.php') ? 'aria-current="page"' : '' ?>>Dashboard</a></li>
                     <li><a href="admin_manage.php"    <?= is_page('admin_manage.php')    ? 'aria-current="page"' : '' ?>>Manage cars</a></li>
                     <li><a href="admin_knowledge.php" <?= is_page('admin_knowledge.php') ? 'aria-current="page"' : '' ?>>Knowledge base</a></li>
-                <?php else: ?>
-                    <li><a href="admin_login.php" <?= is_page('admin_login.php') ? 'aria-current="page"' : '' ?>>Manager</a></li>
                 <?php endif; ?>
+                <?php /* One sign-in link for visitors. Managers reach their own
+                         sign-in page from the footer ("Manager sign in") or from
+                         the link on login.php. */ ?>
             </ul>
         </nav>
 
