@@ -6,7 +6,7 @@
  * up. The POST is handled before header.php is included, so a successful
  * sign-in redirects without ever drawing this page. After signing in the
  * visitor goes back to the page in ?next= (checked by safe_next()), or to
- * their account page.
+ * the home page.
  *
  * Accessibility: every input has a label, errors are listed at the top in
  * a role="alert" box with links to the fields, and a bad field is marked

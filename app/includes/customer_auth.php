@@ -154,17 +154,18 @@ function require_customer(string $next = ''): void
  * The page to go to after signing in. The value comes from the query
  * string, so only a bare page of ours is allowed ("checkout.php" or
  * "product_details.php?id=7"). Anything else, such as a full URL to
- * another site, falls back to the account page. This stops the sign-in
- * form being used as an open redirect.
+ * another site, falls back to the home page, so a normal sign-in (email
+ * or Google) lands the customer straight on the showroom. This also stops
+ * the sign-in form being used as an open redirect.
  */
 function safe_next(string $next): string
 {
     // The D flag stops "$" from also matching before a trailing newline.
     if (!preg_match('/^[a-z_]+\.php(\?[a-z_]+=[0-9]+)?$/D', $next)) {
-        return 'account.php';
+        return 'index.php';
     }
     $page = explode('?', $next, 2)[0];
-    return in_array($page, CUSTOMER_NO_NEXT, true) ? 'account.php' : $next;
+    return in_array($page, CUSTOMER_NO_NEXT, true) ? 'index.php' : $next;
 }
 
 /** Lowercase and trim an email so "Ali@Mail.com " and "ali@mail.com" match. */
