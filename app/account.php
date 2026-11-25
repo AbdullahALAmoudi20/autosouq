@@ -211,8 +211,10 @@ require __DIR__ . '/includes/header.php';
         <section class="panel account-panel account-password" aria-labelledby="password-heading">
             <h2 id="password-heading">Password</h2>
             <?php if (!$editPassword): ?>
-                <?php if ($hasPassword): ?>
+                <?php if ($hasPassword && customer_email_enabled()): ?>
                     <?php require __DIR__ . '/includes/forgot_password_dialog.php'; ?>
+                <?php elseif ($hasPassword): /* no email, so change it here */ ?>
+                    <a class="btn btn-quiet" href="account.php?edit_password=1#password-heading">Change password</a>
                 <?php else: ?>
                     <a class="btn btn-quiet" href="account.php?edit_password=1#password-heading">Set a password</a>
                 <?php endif; ?>

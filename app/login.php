@@ -52,6 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = customer_login($email, $password, $next);
 
         if ($result['ok']) {
+            // Signed in already (email codes are off), or a code was sent.
+            if (!empty($result['signed_in'])) {
+                flash('success', $result['message']);
+                redirect($next);
+            }
             redirect('verify_email.php');
         }
 
@@ -165,7 +170,9 @@ require __DIR__ . '/includes/header.php';
                     Sign in
                 </button>
             </form>
-            <div class="login-back"><?php require __DIR__ . '/includes/forgot_password_dialog.php'; ?></div>
+            <?php if (customer_email_enabled()): /* a reset link needs email */ ?>
+                <div class="login-back"><?php require __DIR__ . '/includes/forgot_password_dialog.php'; ?></div>
+            <?php endif; ?>
 
             <p class="auth-switch">
                 New to <?= e(SITE_NAME) ?>?

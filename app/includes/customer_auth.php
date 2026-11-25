@@ -542,6 +542,14 @@ function customer_register(array $input): array
         return ['ok' => false, 'message' => 'We could not create your account. Please try again.', 'errors' => []];
     }
 
+    // With email codes the customer signs in next and verifies the email.
+    // Without them, sign the new customer in straight away.
+    if (!customer_email_enabled()) {
+        customer_start_session((int) db()->lastInsertId(), $values['full_name']);
+        return ['ok' => true, 'signed_in' => true,
+                'message' => 'Welcome to ' . SITE_NAME . ', ' . $values['full_name'] . '. Your account is ready.'];
+    }
+
     return ['ok' => true, 'message' => 'Welcome to ' . SITE_NAME . ', ' . $values['full_name'] . '. Sign in to verify your email.'];
 }
 
@@ -621,6 +629,13 @@ function customer_login(string $email, string $password, string $next): array
             return $badCredentials;
         }
         $user['password_hash'] = $newHash;
+    }
+
+    // Without Resend there is no way to send a code, so sign in directly
+    // (the same as before email codes were added).
+    if (!customer_email_enabled()) {
+        customer_start_session((int) $user['user_id'], (string) $user['full_name']);
+        return ['ok' => true, 'signed_in' => true, 'message' => 'Welcome back, ' . $user['full_name'] . '.'];
     }
 
     return customer_email_start($user, $next) + ['credentials_valid' => true];

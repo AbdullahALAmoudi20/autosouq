@@ -10,6 +10,19 @@ const CUSTOMER_EMAIL_CODE_TTL = 5 * 60;
 const CUSTOMER_EMAIL_SEND_LIMIT = 3;
 const CUSTOMER_EMAIL_SEND_IP_LIMIT = 12;
 
+/**
+ * True when Resend is set up in secrets.php, so codes and reset links can
+ * actually be emailed. When it is not (for example on the free host, which
+ * has no domain of our own to send from), password sign-in, sign-up and
+ * the account page work directly without an email code, and "Forgot
+ * password?" is hidden, instead of every password sign-in failing.
+ */
+function customer_email_enabled(): bool
+{
+    return CUSTOMER_EMAIL_RESEND_API_KEY !== ''
+        && filter_var(CUSTOMER_EMAIL_FROM, FILTER_VALIDATE_EMAIL) !== false;
+}
+
 /** Drop expired challenges even if the customer leaves the form open. */
 function customer_email_challenge(): ?array
 {
@@ -34,7 +47,7 @@ function customer_email_start(array $user, string $next): array
     if (!filter_var($email, FILTER_VALIDATE_EMAIL) || str_ends_with(strtolower($email), '.test')) {
         return ['ok' => false, 'message' => 'A deliverable email address is required to sign in.'];
     }
-    if (CUSTOMER_EMAIL_RESEND_API_KEY === '' || !filter_var(CUSTOMER_EMAIL_FROM, FILTER_VALIDATE_EMAIL)) {
+    if (!customer_email_enabled()) {
         return ['ok' => false, 'message' => 'Customer email verification is not configured. Contact the site administrator.'];
     }
 

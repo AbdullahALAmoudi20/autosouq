@@ -16,7 +16,7 @@ function request_password_reset(string $email): void
     $stmt = db()->prepare('SELECT user_id, full_name, password_hash, email FROM users WHERE email = ? AND password_hash IS NOT NULL');
     $stmt->execute([$email]);
     $user = $stmt->fetch();
-    if (!$user || CUSTOMER_EMAIL_RESEND_API_KEY === '' || !filter_var(CUSTOMER_EMAIL_FROM, FILTER_VALIDATE_EMAIL)) return;
+    if (!$user || !customer_email_enabled()) return;
 
     $token = bin2hex(random_bytes(32));
     $digest = hash('sha256', $token);

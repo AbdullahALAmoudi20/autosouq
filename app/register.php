@@ -56,7 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result['ok']) {
         flash('success', $result['message']);
-        redirect('login.php?next=' . rawurlencode($next));
+        // Signed in already when email codes are off; otherwise sign in
+        // next to receive the code.
+        redirect(!empty($result['signed_in']) ? $next : 'login.php?next=' . rawurlencode($next));
     }
 
     $errors      = $result['errors'] ?? [];
