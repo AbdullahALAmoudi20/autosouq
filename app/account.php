@@ -23,6 +23,7 @@ require_once __DIR__ . '/includes/cart.php';
 
 require_customer('account.php');
 
+require_once __DIR__ . '/includes/customer_showroom.php';
 $user   = current_user();
 $userId = (int) $user['user_id'];
 
@@ -44,6 +45,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     switch ($action) {
 
+        case 'cancel_drive':
+            update_test_drive(int_input('drive_id'), $action, $userId);
+            redirect('account.php#test-drives');
+        case 'remove_favorite':
+            db()->prepare('DELETE FROM customer_favorites WHERE user_id=? AND car_id=?')->execute([$userId, int_input('car_id')]);
+            redirect('account.php#favorites');
         case 'profile':
             foreach (array_keys($details) as $key) {
                 $details[$key] = str_input($key);
@@ -76,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $hasPassword = $user['password_hash'] !== null;
+$editPassword = ($_GET['edit_password'] ?? '') === '1' || $passwordMessage !== '' || $passwordErrors !== [];
 $hasGoogle   = $user['google_sub'] !== null;
 $orders      = get_user_orders($userId);
 
@@ -109,6 +117,8 @@ require __DIR__ . '/includes/header.php';
         <ul>
             <li><a href="#details-heading">Your details</a></li>
             <li><a href="#password-heading">Password</a></li>
+            <li><a href="#favorites">Favorite cars</a></li>
+            <li><a href="#test-drives">Test drives</a></li>
             <li><a href="#orders-heading">Your orders (<?= count($orders) ?>)</a></li>
         </ul>
     </nav>
@@ -198,13 +208,15 @@ require __DIR__ . '/includes/header.php';
 
         <!-- Password. An account made with Google has no password yet, so
              it can set one without giving a current password. -->
-        <section class="panel account-panel" aria-labelledby="password-heading">
+        <section class="panel account-panel account-password" aria-labelledby="password-heading">
             <h2 id="password-heading">Password</h2>
-            <?php if ($hasPassword): ?>
-                <p class="panel-sub">Enter your current password, then the new one twice.</p>
+            <?php if (!$editPassword): ?>
+                <?php if ($hasPassword): ?>
+                    <?php require __DIR__ . '/includes/forgot_password_dialog.php'; ?>
+                <?php else: ?>
+                    <a class="btn btn-quiet" href="account.php?edit_password=1#password-heading">Set a password</a>
+                <?php endif; ?>
             <?php else: ?>
-                <p class="panel-sub">You sign in with Google. You can also set a password.</p>
-            <?php endif; ?>
 
             <?php if ($passwordMessage !== ''): ?>
                 <div class="form-errors" role="alert">
@@ -259,13 +271,45 @@ require __DIR__ . '/includes/header.php';
                 <button class="btn btn-primary" type="submit">
                     <?= $hasPassword ? 'Change my password' : 'Set a password' ?>
                 </button>
+                <a class="btn btn-quiet" href="account.php#password-heading">Cancel</a>
             </form>
+            <?php endif; ?>
         </section>
 
     </div>
 
     <!-- Every order placed while signed in to this account. The badge
          shows the status as a word, not only as a colour. -->
+    <?php
+    $manageDrives = false;
+    $drives = list_test_drives($userId);
+    require __DIR__ . '/includes/test_drive_list.php';
+    $favorites = db()->prepare('SELECT c.car_id, c.car_name, c.picture FROM customer_favorites f JOIN cars c ON c.car_id=f.car_id WHERE f.user_id=? ORDER BY c.car_name');
+    $favorites->execute([$userId]);
+    $savedCars = $favorites->fetchAll();
+    ?>
+    <section class="panel account-panel" id="favorites">
+        <h2>Favorite cars</h2>
+        <?php if (!$savedCars): ?>
+            <p>Your saved cars will appear here. <a href="products.php">Browse the showroom</a></p>
+        <?php else: ?>
+        <ul class="saved-cars-grid">
+        <?php foreach ($savedCars as $savedCar): ?>
+            <li class="saved-car">
+                <a class="saved-car-link" href="product_details.php?id=<?= (int) $savedCar['car_id'] ?>">
+                    <img src="<?= e(car_image($savedCar['picture'])) ?>" alt="" width="240" height="150" loading="lazy">
+                    <span><?= e($savedCar['car_name']) ?></span>
+                </a>
+                <form method="post">
+                    <?= csrf_field() ?>
+                    <input type="hidden" name="car_id" value="<?= (int) $savedCar['car_id'] ?>">
+                    <button class="btn btn-quiet btn-sm" name="action" value="remove_favorite">Remove<span class="sr-only"> <?= e($savedCar['car_name']) ?> from favorites</span></button>
+                </form>
+            </li>
+        <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
+    </section>
     <section class="account-orders" aria-labelledby="orders-heading">
         <h2 id="orders-heading">Your orders</h2>
 

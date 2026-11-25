@@ -160,6 +160,19 @@ function redirect(string $path): void
  * Queue a message that survives one redirect.
  * $type is success, error, info or warning.
  */
+/** Render a five-star score, including fractional averages and unrated cars. */
+function rating_stars(?float $rating): string
+{
+    $score = round(max(0, min(5, $rating ?? 0)), 1);
+    $percent = (int) round($score * 20);
+    $label = $rating === null ? 'No ratings yet' : "$score out of 5 stars";
+    return '<span class="rating-stars" role="img" aria-label="' . $label
+        . '" style="--rating-fill:' . $percent . '%"><span aria-hidden="true">'
+        . str_repeat('&#9733;', 5) . '</span>'
+        . ($rating === null ? '' : ' <strong aria-hidden="true">' . $score . '/5</strong>')
+        . '</span>';
+}
+
 function flash(string $type, string $message): void
 {
     $_SESSION['flash'][] = ['type' => $type, 'message' => $message];

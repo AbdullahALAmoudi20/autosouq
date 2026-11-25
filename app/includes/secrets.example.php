@@ -6,8 +6,8 @@
  * secrets.php is listed in .gitignore, so the real keys never reach GitHub,
  * and the includes/ folder is closed to browsers on the live host.
  *
- * Every value may be left empty: the site still works, the assistant just
- * falls back to plain search and the Google button is hidden.
+ * The AI and Google settings are optional. Customer password sign-in needs the
+ * email settings at the end of this file.
  *
  * @author  Abdullah Alamoudi (Team Leader and Back-End)
  * @file    app/includes/secrets.example.php
@@ -45,3 +45,10 @@ define('ANTHROPIC_API_KEY', '');   // sk-ant-...
 define('GOOGLE_CLIENT_ID',     '');
 define('GOOGLE_CLIENT_SECRET', '');
 define('GOOGLE_REDIRECT_URI',  '');
+
+/* Required for customer password sign-in. Use a Resend sending key and a sender
+ * address on an authenticated sending domain. */
+// define('CUSTOMER_EMAIL_RESEND_API_KEY', '');
+// define('CUSTOMER_EMAIL_FROM', 'sign-in@example.com');
+// Public directory containing login.php and reset_password.php on the live host.
+// define('CUSTOMER_APP_URL', 'https://autosouq.infinityfreeapp.com');

@@ -327,6 +327,7 @@
             if (firstBadField) {
                 event.preventDefault();
                 firstBadField.focus();
+                firstBadField.dispatchEvent(new Event('autosouq:field-jump', { bubbles: true }));
 
                 // Mark the form so the failure is only announced once.
                 if (form.dataset.announced !== '1') {

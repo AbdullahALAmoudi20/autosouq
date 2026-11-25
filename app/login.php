@@ -49,18 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if ($errors === []) {
-        $result = customer_login($email, $password);
+        $result = customer_login($email, $password, $next);
 
         if ($result['ok']) {
-            flash('success', $result['message']);
-            redirect($next);
+            redirect('verify_email.php');
         }
 
         $formMessage   = $result['message'];
         $lockRemaining = (int) ($result['locked'] ?? 0);
         // A wrong email or password is not tied to one field, but both
         // inputs are marked so a screen reader user knows where to look.
-        $badPassword = $lockRemaining === 0;
+        $badPassword = $lockRemaining === 0 && empty($result['credentials_valid']);
     } else {
         $formMessage = 'Please fill in both fields.';
     }
@@ -166,6 +165,7 @@ require __DIR__ . '/includes/header.php';
                     Sign in
                 </button>
             </form>
+            <div class="login-back"><?php require __DIR__ . '/includes/forgot_password_dialog.php'; ?></div>
 
             <p class="auth-switch">
                 New to <?= e(SITE_NAME) ?>?

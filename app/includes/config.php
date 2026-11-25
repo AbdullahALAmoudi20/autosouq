@@ -75,6 +75,11 @@ foreach (['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_CLIENT_ID',
 }
 unset($secretName);
 
+/* Customer sign-in codes are sent through Resend. Set both in secrets.php. */
+defined('CUSTOMER_EMAIL_RESEND_API_KEY') || define('CUSTOMER_EMAIL_RESEND_API_KEY', '');
+defined('CUSTOMER_EMAIL_FROM') || define('CUSTOMER_EMAIL_FROM', '');
+defined('CUSTOMER_APP_URL') || define('CUSTOMER_APP_URL', 'http://localhost/autosouq-main/autosouq/app');
+
 /* Salt for the hashed IP addresses in chat_rate and login_attempts. Without
  * a secret salt a stored hash could be reversed by trying every address. */
 defined('RATE_LIMIT_SECRET') || define('RATE_LIMIT_SECRET',

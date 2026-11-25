@@ -37,7 +37,7 @@ $flashes    = take_flashes();
     <meta name="description" content="<?= e($pageDescription) ?>">
     <title><?= e($pageTitle) ?> | <?= e(SITE_NAME) ?></title>
     <link rel="stylesheet" href="<?= e(asset('css/style.css')) ?>">
-    <link rel="icon" href="images/brands/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="<?= e(asset('images/brands/favicon.svg')) ?>" type="image/svg+xml">
 </head>
 <body class="<?= e($bodyClass) ?>">
 

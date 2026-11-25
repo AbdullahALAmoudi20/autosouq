@@ -56,6 +56,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
     redirect('product_details.php?id=' . $carId);
 }
 
+require_once __DIR__ . '/includes/customer_auth.php';
+
+$reviewPageUrl = 'product_details.php?id=' . $carId;
+require_once __DIR__ . '/includes/customer_showroom.php';
+$reviewer = current_user();
+$driveFeedback = $_SESSION['drive_feedback'][$carId] ?? null;
+unset($_SESSION['drive_feedback'][$carId]);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array(str_input('action'), ['save_favorite','remove_favorite','book_drive'], true)) {
+    require_customer($reviewPageUrl);
+    csrf_check();
+    $action = str_input('action');
+    if ($action === 'book_drive') {
+        $error = request_test_drive((int) $reviewer['user_id'], $carId, str_input('day'), str_input('hour'));
+        if ($error !== null) {
+            $_SESSION['drive_feedback'][$carId] = ['error' => $error, 'day' => str_input('day'), 'hour' => str_input('hour')];
+            redirect($reviewPageUrl . '#book-drive');
+        }
+        flash('success', 'Test drive requested. Check My account for confirmation.');
+        redirect('account.php#test-drives');
+    }
+    $sql = $action === 'save_favorite'
+        ? 'INSERT INTO customer_favorites (user_id, car_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE car_id=VALUES(car_id)'
+        : 'DELETE FROM customer_favorites WHERE user_id=? AND car_id=?';
+    db()->prepare($sql)->execute([$reviewer['user_id'], $carId]);
+    flash('success', $action === 'save_favorite' ? 'Car saved to My account.' : 'Car removed from favorites.');
+    redirect($reviewPageUrl);
+}
+$reviewError = '';
+$rating = 0;
+$comment = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'review') {
+    require_customer($reviewPageUrl);
+    csrf_check();
+    $rating = filter_input(INPUT_POST, 'rating', FILTER_VALIDATE_INT) ?: 0;
+    $comment = is_string($_POST['comment'] ?? null) ? trim($_POST['comment']) : '';
+    if ($rating < 1 || $rating > 5 || $comment === '' || mb_strlen($comment) > 2000) {
+        $reviewError = 'Choose 1 to 5 stars and write a comment of up to 2,000 characters.';
+    } else {
+        $save = db()->prepare('INSERT INTO car_reviews (car_id, user_id, rating, comment)
+            VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE rating = VALUES(rating),
+            comment = VALUES(comment), updated_at = CURRENT_TIMESTAMP');
+        $save->execute([$carId, $reviewer['user_id'], $rating, $comment]);
+        redirect($reviewPageUrl . '#reviews');
+    }
+}
+$ownReview = false;
+if ($reviewer !== null) {
+    $own = db()->prepare('SELECT rating, comment FROM car_reviews WHERE car_id = ? AND user_id = ?');
+    $own->execute([$carId, $reviewer['user_id']]);
+    $ownReview = $own->fetch();
+    if ($ownReview && $reviewError === '') {
+        $rating = (int) $ownReview['rating'];
+        $comment = $ownReview['comment'];
+    }
+}
+$summary = db()->prepare('SELECT COUNT(*) AS total, AVG(rating) AS average FROM car_reviews WHERE car_id = ?');
+$summary->execute([$carId]);
+$reviewStats = $summary->fetch();
+$reviewCount = (int) $reviewStats['total'];
+$reviewPages = max(1, (int) ceil($reviewCount / 10));
+$reviewPage = min($reviewPages, max(1, (int) filter_input(INPUT_GET, 'reviews_page', FILTER_VALIDATE_INT)));
+$offset = ($reviewPage - 1) * 10;
+$list = db()->prepare('SELECT r.rating, r.comment, r.updated_at, u.full_name FROM car_reviews r
+    JOIN users u ON u.user_id = r.user_id WHERE r.car_id = ?
+    ORDER BY r.updated_at DESC, r.user_id DESC LIMIT 10 OFFSET ' . $offset);
+$list->execute([$carId]);
+$reviews = $list->fetchAll();
+
 $colors       = get_car_colors($carId);
 $relatedCars  = get_related_cars($carId, (int) $car['brand_id']);
 
@@ -216,6 +284,19 @@ require __DIR__ . '/includes/header.php';
                 <p class="detail-description"><?= e($car['description']) ?></p>
             <?php endif; ?>
 
+            <div class="detail-rating">
+                <strong>Ratings</strong>
+                <a href="#reviews">
+                    <?= rating_stars($reviewCount ? (float) $reviewStats['average'] : null) ?>
+                    <?php if ($reviewCount > 0): ?>
+                        (<?= $reviewCount ?> <?= $reviewCount === 1 ? 'review' : 'reviews' ?>)
+                    <?php else: ?>
+                        No reviews yet
+                    <?php endif; ?>
+                </a>
+                <?php require __DIR__ . '/includes/favorite_button.php'; ?>
+            </div>
+
             <!-- Specification, read from the cars table -->
             <h2 class="spec-heading">Specification</h2>
             <dl class="spec-list">
@@ -238,6 +319,7 @@ require __DIR__ . '/includes/header.php';
                     <a href="contact.php">contact the showroom</a>
                     and we will tell you when the next one lands.
                 </p>
+                <a class="btn btn-secondary btn-lg" href="#book-drive" data-dialog="book-drive">Book a test drive</a>
             <?php else: ?>
                 <form class="buy-form" method="post"
                       action="product_details.php?id=<?= (int) $car['car_id'] ?>"
@@ -282,6 +364,7 @@ require __DIR__ . '/includes/header.php';
                                 name="then" value="stay">Add to cart</button>
                         <button class="btn btn-secondary btn-lg" type="submit"
                                 name="then" value="checkout">Add and check out</button>
+                        <a class="btn btn-secondary btn-lg" href="#book-drive" data-dialog="book-drive">Book a test drive</a>
                     </div>
                 </form>
             <?php endif; ?>
@@ -298,6 +381,32 @@ require __DIR__ . '/includes/header.php';
 
         </div>
     </article>
+
+    <dialog open class="action-dialog booking-dialog" id="book-drive" aria-labelledby="drive-title">
+        <h2 id="drive-title" tabindex="-1">Book a test drive</h2>
+        <p><strong><?= e($carName) ?></strong> &middot; One hour at the showroom</p>
+        <p><?= e(SHOP_ADDRESS) ?></p>
+        <p>Choose a start time in Riyadh time. Track confirmation or cancel in <strong>My account → Test drives</strong>.</p>
+        <?php if ($driveFeedback): ?><p role="alert" tabindex="-1"><?= e($driveFeedback['error']) ?></p><?php endif; ?>
+        <?php if (!$reviewer): ?>
+            <a href="login.php?next=<?= rawurlencode($reviewPageUrl) ?>">Sign in to request a test drive</a>
+        <?php else: ?>
+            <p>Start times are 09:00–20:00, or 16:00–20:00 on Fridays.</p>
+            <form method="post" action="<?= e($reviewPageUrl) ?>" class="drive-form">
+                <?= csrf_field() ?>
+                <div class="field"><label for="drive-day">Date</label>
+                    <input type="date" id="drive-day" name="day" min="<?= date('Y-m-d') ?>" value="<?= e($driveFeedback['day'] ?? '') ?>" required></div>
+                <div class="field"><label for="drive-hour">Start time</label>
+                    <select id="drive-hour" name="hour" required><option value="">Select a time</option>
+                        <?php for ($h = 9; $h <= 20; $h++): $slot = sprintf('%02d:00', $h); ?>
+                            <option <?= ($driveFeedback['hour'] ?? '') === $slot ? 'selected' : '' ?>><?= $slot ?></option>
+                        <?php endfor; ?>
+                    </select></div>
+                <button class="btn btn-primary" name="action" value="book_drive">Request test drive</button>
+            </form>
+        <?php endif; ?>
+        <button class="btn btn-quiet dialog-close" type="button" data-close>Close</button>
+    </dialog>
 
     <?php if ($finPrice > 0): ?>
         <!-- Monthly payment estimate. js/finance.js reads the raw price from
@@ -438,6 +547,8 @@ require __DIR__ . '/includes/header.php';
             <?php endif; ?>
         <?php endif; ?>
     </section>
+
+    <?php require __DIR__ . '/includes/car_reviews.php'; ?>
 
     <?php if ($relatedCars !== []): ?>
         <section class="section" aria-labelledby="related-heading">

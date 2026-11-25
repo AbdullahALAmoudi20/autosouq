@@ -174,15 +174,18 @@ function normalise_email(string $email): string
 }
 
 
+require_once __DIR__ . '/customer_email_auth.php';
+
 /* SECTION B: SESSION HELPERS */
 
 /**
  * Mark the session as signed in as this user. Shared by the password
- * login, sign-up and Google sign-in, so all three behave the same.
+ * email verification and Google sign-in.
  */
 function customer_start_session(int $userId, string $fullName): void
 {
     session_regenerate_id(true);               // stop session fixation
+    unset($_SESSION['customer_email_challenge']);
 
     $_SESSION['user_id']    = $userId;
     $_SESSION['user_name']  = $fullName;
@@ -232,7 +235,8 @@ function customer_logout(): void
         $_SESSION['user_name'],
         $_SESSION['user_since'],
         $_SESSION['user_cred'],
-        $_SESSION['google_oauth']
+        $_SESSION['google_oauth'],
+        $_SESSION['customer_email_challenge']
     );
     // current_user() can call this half way through a page, after the
     // HTML has started, and PHP cannot change the session id by then.
@@ -537,9 +541,7 @@ function customer_register(array $input): array
         return ['ok' => false, 'message' => 'We could not create your account. Please try again.', 'errors' => []];
     }
 
-    customer_start_session((int) db()->lastInsertId(), $values['full_name']);
-
-    return ['ok' => true, 'message' => 'Welcome to ' . SITE_NAME . ', ' . $values['full_name'] . '. Your account is ready.'];
+    return ['ok' => true, 'message' => 'Welcome to ' . SITE_NAME . ', ' . $values['full_name'] . '. Sign in to verify your email.'];
 }
 
 /**
@@ -553,8 +555,9 @@ function customer_register(array $input): array
  *
  * @return array{ok: bool, message: string, locked?: int}
  */
-function customer_login(string $email, string $password): array
+function customer_login(string $email, string $password, string $next): array
 {
+    unset($_SESSION['customer_email_challenge']);
     $email = normalise_email($email);
     if ($email === '' || $password === '') {
         return ['ok' => false, 'message' => 'Please enter both your email and your password.'];
@@ -583,7 +586,7 @@ function customer_login(string $email, string $password): array
     $badCredentials = ['ok' => false, 'message' => 'Incorrect email or password.'];
 
     $stmt = db()->prepare(
-        'SELECT user_id, full_name, password_hash FROM users WHERE email = :email'
+        'SELECT user_id, full_name, email, password_hash FROM users WHERE email = :email'
     );
     $stmt->execute([':email' => $email]);
     $user = $stmt->fetch();
@@ -604,16 +607,22 @@ function customer_login(string $email, string $password): array
     // made, store a new one while we have the plain password. (This also
     // changes the fingerprint, so other devices sign in again once.)
     if (password_needs_rehash((string) $user['password_hash'], PASSWORD_DEFAULT)) {
-        db()->prepare('UPDATE users SET password_hash = :hash WHERE user_id = :id')
-            ->execute([
-                ':hash' => password_hash($password, PASSWORD_DEFAULT),
-                ':id'   => (int) $user['user_id'],
-            ]);
+        $newHash = password_hash($password, PASSWORD_DEFAULT);
+        $rehash = db()->prepare(
+            'UPDATE users SET password_hash = :hash WHERE user_id = :id AND password_hash = :previous'
+        );
+        $rehash->execute([
+            ':hash' => $newHash,
+            ':id' => (int) $user['user_id'],
+            ':previous' => $user['password_hash'],
+        ]);
+        if ($rehash->rowCount() !== 1) {
+            return $badCredentials;
+        }
+        $user['password_hash'] = $newHash;
     }
 
-    customer_start_session((int) $user['user_id'], (string) $user['full_name']);
-
-    return ['ok' => true, 'message' => 'Welcome back, ' . $user['full_name'] . '.'];
+    return customer_email_start($user, $next) + ['credentials_valid' => true];
 }
 
 /**

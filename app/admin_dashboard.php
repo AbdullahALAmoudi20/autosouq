@@ -23,6 +23,11 @@ require_once __DIR__ . '/includes/cart.php';
  * change only re-embeds what changed. */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     csrf_check();
+    if (in_array(str_input('action'), ['confirm_drive','cancel_drive'], true)) {
+        require_once __DIR__ . '/includes/customer_showroom.php';
+        update_test_drive(int_input('drive_id'), str_input('action'), null);
+        redirect('admin_dashboard.php#test-drives');
+    }
     if (str_input('action') === 'rebuild_index') {
         try {
             $rebuild = kb_rebuild_index(true);
@@ -84,6 +89,7 @@ require __DIR__ . '/includes/header.php';
         <p class="page-head-actions">
             <a class="btn btn-primary" href="admin_manage.php?mode=add">Add a vehicle</a>
             <a class="btn btn-quiet" href="admin_manage.php">Manage vehicles</a>
+            <a class="btn btn-quiet" href="#test-drives">Test drives</a>
         </p>
     </header>
 
@@ -118,6 +124,12 @@ require __DIR__ . '/includes/header.php';
     </section>
 
     <!-- AI assistant: which mode the chat runs in, and what its index holds -->
+    <?php
+    require_once __DIR__ . '/includes/customer_showroom.php';
+    $manageDrives = true;
+    $drives = list_test_drives(null);
+    require __DIR__ . '/includes/test_drive_list.php';
+    ?>
     <section class="panel ai-panel" aria-labelledby="ai-heading">
         <div class="ai-panel-head">
             <div>

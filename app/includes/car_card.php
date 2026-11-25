@@ -84,4 +84,5 @@ $cardLabel = $car['car_name'] . ', ' . money((float) $car['price']) . ', '
             aria-pressed="false" hidden>
         <span class="compare-toggle-label">Compare</span><span class="sr-only"> <?= e($car['car_name']) ?></span>
     </button>
+    <?php require __DIR__ . '/favorite_button.php'; ?>
 </li>

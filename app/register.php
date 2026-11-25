@@ -5,7 +5,7 @@
  * Name, email and password are required. Phone, city and address are
  * optional and only used to fill in the checkout form later. The rules are
  * checked on the server by customer_register(); on success the new
- * customer is signed in and sent to ?next= or their account page.
+ * customer is sent to sign in and verify their email.
  *
  * Accessibility: labels on every input, the password rules are written
  * under the field (not only shown after a mistake), errors are listed in a
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($result['ok']) {
         flash('success', $result['message']);
-        redirect($next);
+        redirect('login.php?next=' . rawurlencode($next));
     }
 
     $errors      = $result['errors'] ?? [];

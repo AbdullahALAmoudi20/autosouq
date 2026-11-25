@@ -69,6 +69,9 @@ declare(strict_types=1);
 
 <script src="<?= e(asset('js/validation.js')) ?>" defer></script>
 <script src="<?= e(asset('js/site.js')) ?>" defer></script>
+<?php if (is_page('product_details.php') || is_page('login.php') || is_page('account.php')): ?>
+    <script src="<?= e(asset('js/action-dialogs.js')) ?>" defer></script>
+<?php endif; ?>
 <?php if (!is_admin_page()): ?>
     <script src="<?= e(asset('js/assistant.js')) ?>" defer></script>
     <!-- "Compare" buttons on every car card, and the compare tray -->

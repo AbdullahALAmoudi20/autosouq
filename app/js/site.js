@@ -74,10 +74,67 @@
         });
     }
 
+    function initPageJumps() {
+        let pending = null;
+        let highlighted = null;
+        let arrivalTimer;
+        let clearTimer;
+
+        function highlightAfterScroll() {
+            if (!pending) return;
+            clearTimeout(arrivalTimer);
+            arrivalTimer = setTimeout(function () {
+                highlighted = pending;
+                pending = null;
+                highlighted.classList.add('jump-highlight');
+                clearTimer = setTimeout(function () {
+                    highlighted.classList.remove('jump-highlight');
+                    highlighted = null;
+                }, 1600);
+            }, 150);
+        }
+
+        function markDestination(target) {
+            clearTimeout(arrivalTimer);
+            clearTimeout(clearTimer);
+            if (highlighted) highlighted.classList.remove('jump-highlight');
+            highlighted = null;
+            pending = null;
+            if (!target || target.matches('dialog')) return;
+            if (target.matches('main')) target = target.querySelector('h1') || target;
+            if (target.matches('h2')) target = target.closest('section') || target;
+            pending = target;
+            highlightAfterScroll();
+        }
+
+        function followHash(hash) {
+            let id;
+            try { id = decodeURIComponent(hash.slice(1)); }
+            catch { return; }
+            markDestination(document.getElementById(id));
+        }
+
+        document.addEventListener('click', function (event) {
+            const link = event.target.closest('a[href]');
+            if (!link || !link.hash || link.target || link.hasAttribute('download') ||
+                event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+            if (link.origin === location.origin && link.pathname === location.pathname && link.search === location.search) {
+                followHash(link.hash);
+            }
+        });
+        document.addEventListener('autosouq:field-jump', function (event) {
+            markDestination(event.target);
+        });
+        window.addEventListener('scroll', highlightAfterScroll, { passive: true });
+        window.addEventListener('hashchange', () => followHash(location.hash));
+        if (location.hash) followHash(location.hash);
+    }
+
     function init() {
         initNavigation();
         initConfirmations();
         initFlashDismiss();
+        initPageJumps();
     }
 
     if (document.readyState === 'loading') {
